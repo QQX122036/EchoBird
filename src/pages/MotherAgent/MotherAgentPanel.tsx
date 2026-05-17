@@ -16,9 +16,20 @@ export function MotherAgentPanel() {
     selectedServerId,
     selectServer,
     isProcessing,
+    parasiteAgent,
   } = useMotherAgent();
   const confirm = useConfirm();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+
+  // When parasite (Claude Code) is active, server selection is meaningless:
+  // we spawn `claude` as a local subprocess and never SSH on its behalf. We
+  // gray out the whole list + show a small note rather than silently
+  // ignoring clicks the way the previous version did.
+  const parasiteLocked = parasiteAgent === 'claudecode';
+  const zh = locale === 'zh' || locale === 'zh-Hans';
+  const parasiteLockedNote = zh
+    ? '接入 Claude Code 时仅本机运行，服务器切换已停用。'
+    : 'Claude Code runs locally — server switching is disabled while connected.';
 
   const [panelTab, setPanelTab] = useState<'servers' | 'guide'>('servers');
   const [showSSHModal, setShowSSHModal] = useState(false);
@@ -341,129 +352,143 @@ export function MotherAgentPanel() {
         {panelTab === 'servers' ? (
           /* ── SERVERS tab ── */
           <div className="space-y-2">
-            {/* Server list */}
-            {/* Local server — always first */}
+            {parasiteLocked && (
+              // Banner explains why the list is greyed out so the user
+              // doesn't think it's a bug. Reads in both themes via
+              // cyber-text-muted (CSS variable that flips polarity).
+              <div className="px-3 py-2 rounded border border-cyber-border/60 bg-cyber-surface text-[11px] leading-relaxed text-cyber-text-muted">
+                {parasiteLockedNote}
+              </div>
+            )}
+            {/* Server list — wrapped so we can gray + disable as a unit
+                when parasite mode owns this turn's execution. */}
             <div
-              onClick={() => !isProcessing && selectServer('local')}
-              className={`p-3 rounded transition-colors select-none flex items-center border bg-cyber-surface ${isProcessing && selectedServerId !== 'local' ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${
-                selectedServerId === 'local'
-                  ? 'border-cyber-accent'
-                  : 'border-transparent hover:bg-cyber-elevated'
-              }`}
+              className={parasiteLocked ? 'pointer-events-none opacity-40 space-y-2' : 'space-y-2'}
+              aria-disabled={parasiteLocked}
             >
-              <div className="mr-3">
-                <div
-                  className={`w-4 h-4 rounded-full border-2 relative ${selectedServerId === 'local' ? 'border-cyber-accent' : 'border-cyber-border'}`}
-                >
-                  {selectedServerId === 'local' && (
-                    <div className="w-2 h-2 rounded-full bg-cyber-accent absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                  )}
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-cyber-text-secondary mb-0.5 tracking-widest uppercase font-mono">
-                  {t('mother.local')}
-                </div>
-                <div className="text-sm font-bold truncate text-cyber-text font-mono">
-                  127.0.0.1
-                </div>
-              </div>
-            </div>
-            {/* SSH servers */}
-            {sshServers.map((server) => (
+              {/* Local server — always first */}
               <div
-                key={server.id}
-                onClick={() => !isProcessing && selectServer(server.id)}
-                className={`p-3 rounded transition-colors select-none flex items-center border bg-cyber-surface ${isProcessing && selectedServerId !== server.id ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${
-                  selectedServerId === server.id
+                onClick={() => !isProcessing && selectServer('local')}
+                className={`p-3 rounded transition-colors select-none flex items-center border bg-cyber-surface ${isProcessing && selectedServerId !== 'local' ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${
+                  selectedServerId === 'local'
                     ? 'border-cyber-accent'
                     : 'border-transparent hover:bg-cyber-elevated'
                 }`}
               >
                 <div className="mr-3">
                   <div
-                    className={`w-4 h-4 rounded-full border-2 relative ${selectedServerId === server.id ? 'border-cyber-accent' : 'border-cyber-border'}`}
+                    className={`w-4 h-4 rounded-full border-2 relative ${selectedServerId === 'local' ? 'border-cyber-accent' : 'border-cyber-border'}`}
                   >
-                    {selectedServerId === server.id && (
+                    {selectedServerId === 'local' && (
                       <div className="w-2 h-2 rounded-full bg-cyber-accent absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                     )}
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1 mb-0.5">
-                    <span className="text-xs text-cyber-text-secondary tracking-widest uppercase font-mono truncate flex-1 min-w-0">
-                      {server.alias || t('mother.local')}
-                    </span>
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        const ok = await confirm({
-                          title: t('mother.deleteServerTitle'),
-                          message: t('mother.deleteServerMsg'),
-                          confirmText: t('btn.delete'),
-                          cancelText: t('btn.cancel'),
-                          type: 'danger',
-                        });
-                        if (ok) removeSSHServer(server.id);
-                      }}
-                      className="text-xs font-mono text-cyber-text-muted/50 hover:text-red-500 transition-colors flex-shrink-0"
-                    >
-                      [{t('btn.delete')}]
-                    </button>
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        // Load encrypted password from backend
-                        let savedPassword = '';
-                        try {
-                          const servers = await api.loadSSHServers();
-                          const saved = servers.find((s) => s.id === server.id);
-                          if (saved?.password) savedPassword = saved.password;
-                        } catch {
-                          // Ignore errors loading saved password
-                        }
-                        setSSHForm({
-                          host: server.host,
-                          port: server.port,
-                          username: server.username,
-                          password: savedPassword,
-                          alias: server.alias || '',
-                          showPassword: false,
-                        });
-                        setSSHTestResult(null);
-                        setShowSSHModal(true);
-                      }}
-                      className="text-xs font-mono text-cyber-text-muted/50 hover:text-cyber-text transition-colors flex-shrink-0"
-                    >
-                      [{t('btn.edit')}]
-                    </button>
+                  <div className="text-xs text-cyber-text-secondary mb-0.5 tracking-widest uppercase font-mono">
+                    {t('mother.local')}
                   </div>
                   <div className="text-sm font-bold truncate text-cyber-text font-mono">
-                    {server.username ? `${server.username}@` : ''}
-                    {server.host}
-                    {server.port !== '22' ? `:${server.port}` : ''}
+                    127.0.0.1
                   </div>
                 </div>
               </div>
-            ))}
-            {/* Add button card */}
-            <button
-              onClick={() => {
-                setSSHForm({
-                  host: '',
-                  port: '22',
-                  username: '',
-                  password: '',
-                  alias: '',
-                  showPassword: false,
-                });
-                setSSHTestResult(null);
-                setShowSSHModal(true);
-              }}
-              className="w-full p-4 border border-dashed border-cyber-border/30 rounded hover:border-cyber-border/60 hover:bg-cyber-text/5 transition-all text-cyber-text/60 hover:text-cyber-text text-[14px] font-semibold"
-            >
-              + {t('mother.addServer')}
-            </button>
+              {/* SSH servers */}
+              {sshServers.map((server) => (
+                <div
+                  key={server.id}
+                  onClick={() => !isProcessing && selectServer(server.id)}
+                  className={`p-3 rounded transition-colors select-none flex items-center border bg-cyber-surface ${isProcessing && selectedServerId !== server.id ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'} ${
+                    selectedServerId === server.id
+                      ? 'border-cyber-accent'
+                      : 'border-transparent hover:bg-cyber-elevated'
+                  }`}
+                >
+                  <div className="mr-3">
+                    <div
+                      className={`w-4 h-4 rounded-full border-2 relative ${selectedServerId === server.id ? 'border-cyber-accent' : 'border-cyber-border'}`}
+                    >
+                      {selectedServerId === server.id && (
+                        <div className="w-2 h-2 rounded-full bg-cyber-accent absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <span className="text-xs text-cyber-text-secondary tracking-widest uppercase font-mono truncate flex-1 min-w-0">
+                        {server.alias || t('mother.local')}
+                      </span>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const ok = await confirm({
+                            title: t('mother.deleteServerTitle'),
+                            message: t('mother.deleteServerMsg'),
+                            confirmText: t('btn.delete'),
+                            cancelText: t('btn.cancel'),
+                            type: 'danger',
+                          });
+                          if (ok) removeSSHServer(server.id);
+                        }}
+                        className="text-xs font-mono text-cyber-text-muted/50 hover:text-red-500 transition-colors flex-shrink-0"
+                      >
+                        [{t('btn.delete')}]
+                      </button>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          // Load encrypted password from backend
+                          let savedPassword = '';
+                          try {
+                            const servers = await api.loadSSHServers();
+                            const saved = servers.find((s) => s.id === server.id);
+                            if (saved?.password) savedPassword = saved.password;
+                          } catch {
+                            // Ignore errors loading saved password
+                          }
+                          setSSHForm({
+                            host: server.host,
+                            port: server.port,
+                            username: server.username,
+                            password: savedPassword,
+                            alias: server.alias || '',
+                            showPassword: false,
+                          });
+                          setSSHTestResult(null);
+                          setShowSSHModal(true);
+                        }}
+                        className="text-xs font-mono text-cyber-text-muted/50 hover:text-cyber-text transition-colors flex-shrink-0"
+                      >
+                        [{t('btn.edit')}]
+                      </button>
+                    </div>
+                    <div className="text-sm font-bold truncate text-cyber-text font-mono">
+                      {server.username ? `${server.username}@` : ''}
+                      {server.host}
+                      {server.port !== '22' ? `:${server.port}` : ''}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {/* Add button card */}
+              <button
+                onClick={() => {
+                  setSSHForm({
+                    host: '',
+                    port: '22',
+                    username: '',
+                    password: '',
+                    alias: '',
+                    showPassword: false,
+                  });
+                  setSSHTestResult(null);
+                  setShowSSHModal(true);
+                }}
+                className="w-full p-4 border border-dashed border-cyber-border/30 rounded hover:border-cyber-border/60 hover:bg-cyber-text/5 transition-all text-cyber-text/60 hover:text-cyber-text text-[14px] font-semibold"
+              >
+                + {t('mother.addServer')}
+              </button>
+            </div>
           </div>
         ) : (
           /* ── SSH GUIDE tab (accordion) ── */
