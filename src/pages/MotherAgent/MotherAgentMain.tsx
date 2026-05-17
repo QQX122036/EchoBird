@@ -453,8 +453,17 @@ export function MotherAgentMain() {
                 },
               ]}
             />
-            {/* Parasite chip removed — the option now lives inside the model
-                selector below the regular models, separated by a divider. */}
+            {/* Soft nudge: when the user is on a regular model (i.e. talking
+                to EchoBird's own short-memory agent_loop), surface the "?"
+                tooltip that reminds them Claude Code can take over for real
+                long-form conversations. Hidden once they're already in
+                parasite mode — no need to badger. */}
+            {parasiteAgent !== PARASITE_CLAUDE_ID && (
+              <ParasiteHint
+                zh={locale === 'zh' || locale === 'zh-Hans'}
+                ccInstalled={parasiteAvailable.includes(PARASITE_CLAUDE_ID)}
+              />
+            )}
             {isProcessing ? (
               <button
                 onClick={() => abortAgent()}
@@ -483,3 +492,49 @@ export function MotherAgentMain() {
 // selector's extras slot. Picking it routes the turn through the wrapped
 // Claude Code CLI instead of EchoBird's own agent_loop.
 const PARASITE_CLAUDE_ID = 'claudecode';
+
+// ===== Parasite Hint =====
+// Themed "?" glyph next to the model selector that nudges the user toward
+// Claude Code when they're chatting with EchoBird's own short-memory loop.
+// Tooltip copy adapts to whether CC is already installed (action: switch)
+// vs not installed (action: install first). Matches the visual pattern of
+// AppManager's relay-mode "?" — bottom-anchored caret since we live in the
+// bottom toolbar.
+
+interface ParasiteHintProps {
+  zh: boolean;
+  ccInstalled: boolean;
+}
+
+function ParasiteHint({ zh, ccInstalled }: ParasiteHintProps) {
+  const tooltip = zh
+    ? ccInstalled
+      ? '我仅拥有短暂记忆 + 完善的安装能力，助你在 AI 赛道启航。如果想正经长聊，在上方选择器里切到 Claude Code 让它接手。'
+      : '我仅拥有短暂记忆 + 完善的安装能力，助你在 AI 赛道启航。建议安装并配置 Claude Code，让它接手为你服务。'
+    : ccInstalled
+      ? 'I only have short-term memory + polished install/deploy skills — built to launch you into AI. For real long-form conversations, switch to Claude Code in the selector above to hand it over.'
+      : 'I only have short-term memory + polished install/deploy skills — built to launch you into AI. Install and configure Claude Code, then let it take the conversation forward.';
+
+  return (
+    <span className="group relative inline-flex items-center">
+      <span
+        aria-label={tooltip}
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyber-elevated font-sans text-xs font-medium leading-none text-cyber-text-secondary cursor-help select-none hover:bg-cyber-accent/15 hover:text-cyber-accent transition-colors"
+      >
+        ?
+      </span>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute right-0 bottom-full z-[100] mb-1.5 w-72 rounded border border-cyber-accent/40 bg-cyber-elevated px-3 py-2 text-[11px] leading-relaxed text-cyber-text shadow-cyber-card backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        {/* Caret — rotated square poking down out of the tooltip's bottom edge,
+            aligned roughly above the ? glyph at the right side. */}
+        <span
+          aria-hidden="true"
+          className="absolute -bottom-1 right-2 h-2 w-2 rotate-45 border-b border-r border-cyber-accent/40 bg-cyber-elevated"
+        />
+        {tooltip}
+      </span>
+    </span>
+  );
+}
