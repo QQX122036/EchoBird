@@ -1,7 +1,8 @@
-// Parasite APIs — Mother Agent's "parasite" mode wraps installed CLI agents
-// (Hermes / Claude Code / OpenClaw) as a drop-in alternative to EchoBird's
-// own agent_loop. The frontend toggles into parasite mode per agent and
-// streams responses back via `parasite_event`.
+// Parasite APIs — Mother Agent's "Connect" mode wraps the installed Claude
+// Code CLI as a drop-in alternative to EchoBird's own agent_loop. The
+// frontend toggles into Connect mode and streams responses back via
+// `parasite_event`. Internal name stays "parasite" since it accurately
+// describes the mechanism (we run their binary without their cooperation).
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { ParasiteSendRequest, ParasiteEvent } from './types';

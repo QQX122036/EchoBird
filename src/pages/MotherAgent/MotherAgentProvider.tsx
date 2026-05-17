@@ -38,9 +38,9 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
   const chatHistoryMap = useRef<Map<string, ChatMessage[]>>(new Map());
 
   // Parasite mode — when non-null, sendMessage delegates this turn to the
-  // installed CLI agent of that id (hermes / claudecode / openclaw) instead
-  // of EchoBird's own agent_loop. Persisted so the user keeps their choice
-  // across reloads.
+  // installed Claude Code CLI ('claudecode' is the only supported id today)
+  // instead of EchoBird's own agent_loop. Persisted so the user keeps
+  // their choice across reloads.
   const [parasiteAgent, setParasiteAgentRaw] = useState<string | null>(() =>
     localStorage.getItem('echobird_parasite_agent')
   );
@@ -55,9 +55,9 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
       .parasiteListInstalled()
       .then((ids) => {
         setParasiteAvailable(ids);
-        // If the persisted choice is no longer installed (e.g. user uninstalled
-        // hermes between sessions), clear it so we don't try to spawn a missing
-        // binary on the next turn.
+        // If the persisted choice is no longer installed (e.g. user
+        // uninstalled Claude Code between sessions), clear it so we don't
+        // try to spawn a missing binary on the next turn.
         setParasiteAgentRaw((prev) => (prev && !ids.includes(prev) ? null : prev));
       })
       .catch(() => setParasiteAvailable([]));
@@ -479,12 +479,11 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
         { type: 'user', text: (displayText ?? message).trim(), chips },
       ]);
 
-      // Parasite mode: delegate this turn to an installed CLI agent. The
-      // wrapped agent (Hermes / Claude Code / OpenClaw) runs in its own
-      // environment with its own memory, skills, tools, AND model config.
-      // EchoBird's model selector is hidden while parasite is active —
-      // model management belongs to the wrapped agent (configure via the
-      // App Manager page or that agent's own setup tool).
+      // Parasite mode: delegate this turn to the installed Claude Code CLI.
+      // CC runs in its own environment with its own memory, skills, tools,
+      // AND model config. EchoBird's model selector is hidden while
+      // Connect is active — model management belongs to Claude Code
+      // (configure via App Manager or `claude /model`).
       if (parasiteAgent) {
         try {
           await api.parasiteSendMessage({
