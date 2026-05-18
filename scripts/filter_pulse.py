@@ -24,13 +24,25 @@ from pathlib import Path
 #   twitter.com / *.twitter.com
 BLOCKED_HOST_RE = re.compile(r"^https?://([^/]+\.)?(x|twitter)\.com/", re.IGNORECASE)
 
+# Match items whose title is platform moderation/announcement noise.
+# Upstream aggregators sometimes wrap the source platform's own governance
+# posts (e.g. juejin's "【社区公告】" account-cleanup / crawler-ban
+# announcements) as "news" items — moderation, not AI content. Add new
+# patterns to the alternation as we find them.
+BLOCKED_TITLE_RE = re.compile(r"社区公告")
+
 
 def filter_file(path: Path) -> tuple[int, int]:
     text = path.read_text(encoding="utf-8")
     payload = json.loads(text)
     items = payload.get("items") or []
     before = len(items)
-    kept = [it for it in items if not BLOCKED_HOST_RE.match(it.get("url") or "")]
+    kept = [
+        it
+        for it in items
+        if not BLOCKED_HOST_RE.match(it.get("url") or "")
+        and not BLOCKED_TITLE_RE.search(it.get("title") or "")
+    ]
     payload["items"] = kept
     payload["total_items"] = len(kept)
     # Preserve the upstream's indent style so refresh commits show only the
