@@ -1,0 +1,86 @@
+name: Sync Version Manifest
+
+# Triggered when a GitHub Release is published — i.e. when the operator
+# flips a draft release to public (the final step of the release flow).
+# At that moment we bump docs/api/version/index.json so the in-app
+# auto-updater sees the new version + downloadable artifacts together.
+#
+# Previously this lived inside release.yml as a job that ran right after
+# the tag-push build. With release.yml since v4.8.6 publishing as draft,
+# that timing was wrong — the manifest bumped before the release was
+# downloadable, opening a window where users saw "update available" but
+# `gh release view` 404'd. Splitting the workflow ties the bump to the
+# publish event so the two changes land atomically from the user's POV.
+
+on:
+  release:
+    types: [published]
+  # Manual trigger for re-running this against a specific tag (e.g. if
+  # the original event fired before the release body was finalised).
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to sync (e.g. v4.8.6)"
+        required: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Resolve tag
+        id: tag
+        run: |
+          # `release` event: github.event.release.tag_name
+          # `workflow_dispatch` event: inputs.tag
+          if [ -n "${{ github.event.release.tag_name }}" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Write version manifest
+        env:
+          TAG_NAME: ${{ steps.tag.outputs.tag }}
+        run: |
+          VERSION="${TAG_NAME#v}"
+          DATE="$(date -u +%Y-%m-%d)"
+          MANIFEST="docs/api/version/index.json"
+          # Policy: tag annotations are English (engineering audience),
+          # `releaseNotes` is Chinese (user-facing). The release commit
+          # writes the Chinese copy into the manifest; this job only
+          # refreshes version + date and preserves whatever releaseNotes
+          # is already there. Falls back to a generic note when the
+          # manifest is malformed or missing the field.
+          EXISTING_NOTES="$(jq -r '.releaseNotes // empty' "$MANIFEST" 2>/dev/null || true)"
+          if [ -z "$EXISTING_NOTES" ]; then
+            EXISTING_NOTES="Release $TAG_NAME"
+          fi
+          jq -n \
+            --arg v "$VERSION" \
+            --arg d "$DATE" \
+            --arg n "$EXISTING_NOTES" \
+            '{version: $v, releaseDate: $d, releaseNotes: $n}' \
+            > "$MANIFEST"
+
+      - name: Commit and push
+        env:
+          TAG_NAME: ${{ steps.tag.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/api/version/index.json
+          if git diff --staged --quiet; then
+            echo "Manifest already up to date; nothing to commit."
+            exit 0
+          fi
+          git commit -m "docs: publish ${TAG_NAME} release notes"
+          git push origin main
