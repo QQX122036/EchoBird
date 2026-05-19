@@ -42,6 +42,10 @@ const ja: Partial<Translations> = {
   'pulse.fetchFailed': '取得に失敗しました',
   'pulse.loadingFirst': '読み込み中…',
   'pulse.empty': '項目がありません',
+  'pulse.relJustNow': 'たった今',
+  'pulse.relMinutes': '{n}分前',
+  'pulse.relHours': '{n}時間前',
+  'pulse.relDays': '{n}日前',
   'settings.title': '設定',
   'settings.version': 'バージョン',
   'settings.language': '言語',
@@ -225,11 +229,17 @@ const ja: Partial<Translations> = {
   'mother.hintUninstall': '{agent} を完全にアンインストール',
   'mother.hintNetworkInfo': '内部 / 外部 IP を確認',
   'mother.hintSecurityAudit': '不審なアクティビティを検出',
+  'mother.parasiteTipInstalled':
+    'AI アシスタントです。短い記憶と確かなインストール能力で、AI の世界へのスタートをお手伝いします。Claude Code にモデルを設定済みであれば、右側で選択すると会話を続けられます。',
+  'mother.parasiteTipNotInstalled':
+    'AI アシスタントです。短い記憶と確かなインストール能力で、AI の世界へのスタートをお手伝いします。まず Claude Code をインストールしてモデルを設定し、その後右側で選択して会話を続けてください。',
+  'terminal.thinking': '思考中',
   'ssh.winNote':
     'Windows での SSH 展開は Linux / macOS より複雑です。サーバー側に EchoBird を先にインストールし、「インストール & 修復」から SSH を設定するのを推奨します。',
   'status.running': '実行中',
   'status.offline': 'オフライン',
   'status.complete': '完了',
   'status.failed': '失敗',
+  'status.notInstalled': '未インストール',
 };
 export default ja;

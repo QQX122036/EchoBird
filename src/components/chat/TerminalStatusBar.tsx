@@ -1,6 +1,8 @@
 // TerminalStatusBar — ticker tape pseudo-terminal strip
 // Content scrolls continuously from left to left (doubling creates seamless loop).
-// No content → "思考中" dotPulse idle.
+// No content → localized "thinking" dotPulse idle.
+
+import { useI18n } from '../../hooks/useI18n';
 
 interface TerminalStatusBarProps {
   toolName?: string; // tool currently being called
@@ -15,6 +17,7 @@ export function TerminalStatusBar({
   isVisible,
   isProcessing,
 }: TerminalStatusBarProps) {
+  const { t } = useI18n();
   if (!isVisible || !isProcessing) return null;
 
   const label = toolName ? `⚡ ${toolName}` : textContent || '';
@@ -47,9 +50,11 @@ export function TerminalStatusBar({
           </span>
         </div>
       ) : (
-        // Idle: "思考中" + dotPulse dots
+        // Idle: localized "thinking" + dotPulse dots
         <span className="inline-flex items-center gap-0.5 px-3">
-          <span className="text-cyber-text-muted/50 text-xs font-mono mr-1">思考中</span>
+          <span className="text-cyber-text-muted/50 text-xs font-mono mr-1">
+            {t('terminal.thinking')}
+          </span>
           {[0, 1, 2].map((i) => (
             <span
               key={i}

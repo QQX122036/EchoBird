@@ -42,6 +42,11 @@ export type TKey =
   | 'pulse.fetchFailed'
   | 'pulse.loadingFirst'
   | 'pulse.empty'
+  // Relative time (with {n} placeholder for the numeric value)
+  | 'pulse.relJustNow'
+  | 'pulse.relMinutes'
+  | 'pulse.relHours'
+  | 'pulse.relDays'
   // Settings
   | 'settings.title'
   | 'settings.version'
@@ -82,6 +87,7 @@ export type TKey =
   | 'status.scanning'
   | 'status.complete'
   | 'status.failed'
+  | 'status.notInstalled'
 
   // Model dialog
   | 'model.name'
@@ -212,6 +218,11 @@ export type TKey =
   | 'mother.displayName'
   | 'mother.optional'
   | 'mother.displayNamePlaceholder'
+  // Parasite "?" tooltip (next to model selector)
+  | 'mother.parasiteTipInstalled'
+  | 'mother.parasiteTipNotInstalled'
+  // Terminal status bar
+  | 'terminal.thinking'
   // SSH Guide
   | 'ssh.cloudDesc'
   | 'ssh.usernameHint'

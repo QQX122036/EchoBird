@@ -29,6 +29,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import { ChevronDown, ChevronRight, ExternalLink, RefreshCw } from 'lucide-react';
 import { useI18n } from '../../hooks/useI18n';
+import type { TKey } from '../../i18n';
 
 // ===== Mirror config =====
 
@@ -243,14 +244,12 @@ async function fetchFeed(lang: 'zh' | 'en'): Promise<RawFeed> {
 
 const openExternal = (url: string) => shellOpen(url).catch(() => window.open(url, '_blank'));
 
-const formatRelative = (ts: number, locale: string): string => {
+const formatRelative = (ts: number, t: (key: TKey) => string): string => {
   const sec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
-  const isCN = locale.startsWith('zh');
-  if (sec < 60) return isCN ? '刚刚' : 'just now';
-  if (sec < 3600) return isCN ? `${Math.floor(sec / 60)}分钟前` : `${Math.floor(sec / 60)}m ago`;
-  if (sec < 86400)
-    return isCN ? `${Math.floor(sec / 3600)}小时前` : `${Math.floor(sec / 3600)}h ago`;
-  return isCN ? `${Math.floor(sec / 86400)}天前` : `${Math.floor(sec / 86400)}d ago`;
+  if (sec < 60) return t('pulse.relJustNow');
+  if (sec < 3600) return t('pulse.relMinutes').replace('{n}', String(Math.floor(sec / 60)));
+  if (sec < 86400) return t('pulse.relHours').replace('{n}', String(Math.floor(sec / 3600)));
+  return t('pulse.relDays').replace('{n}', String(Math.floor(sec / 86400)));
 };
 
 // URL-path-driven classification so that *.blog* hosts and lab-name sources
@@ -555,7 +554,7 @@ export function AiPulseTitleActions() {
 // ===== Item row =====
 
 function ItemRow({ item }: { item: NewsItem }) {
-  const { locale } = useI18n();
+  const { t } = useI18n();
   const { feedSource } = useAiPulse();
   // Title language follows the feed source, NOT the UI locale — a zh
   // user viewing the 全球 feed should see English titles (those are
@@ -581,7 +580,7 @@ function ItemRow({ item }: { item: NewsItem }) {
           {ts > 0 && (
             <>
               <span className="opacity-50">·</span>
-              <span>{formatRelative(ts, locale)}</span>
+              <span>{formatRelative(ts, t)}</span>
             </>
           )}
         </div>

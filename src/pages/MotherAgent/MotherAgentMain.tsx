@@ -13,7 +13,7 @@ import { MA_PAGE_SIZE } from './types';
 
 // ===== Main Content (center area) — CHAT =====
 export function MotherAgentMain() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const {
     models,
     agentModel,
@@ -426,10 +426,7 @@ export function MotherAgentMain() {
                 interrupt the natural "pick model → send" action flow on the
                 right. Hidden once the user is already in parasite mode. */}
             {parasiteAgent !== PARASITE_CLAUDE_ID && (
-              <ParasiteHint
-                zh={locale === 'zh' || locale === 'zh-Hans'}
-                ccInstalled={parasiteAvailable.includes(PARASITE_CLAUDE_ID)}
-              />
+              <ParasiteHint ccInstalled={parasiteAvailable.includes(PARASITE_CLAUDE_ID)} />
             )}
             <RemoteModelSelector
               models={modelList}
@@ -457,8 +454,7 @@ export function MotherAgentMain() {
                   // visually distinct from regular Claude models.
                   icon: '/icons/tools/claude.svg',
                   disabled: !parasiteAvailable.includes(PARASITE_CLAUDE_ID),
-                  disabledLabel:
-                    locale === 'zh' || locale === 'zh-Hans' ? '未安装' : 'Not installed',
+                  disabledLabel: t('status.notInstalled'),
                 },
               ]}
             />
@@ -500,18 +496,14 @@ const PARASITE_CLAUDE_ID = 'claudecode';
 // bottom toolbar.
 
 interface ParasiteHintProps {
-  zh: boolean;
   ccInstalled: boolean;
 }
 
-function ParasiteHint({ zh, ccInstalled }: ParasiteHintProps) {
-  const tooltip = zh
-    ? ccInstalled
-      ? '我是 AI 助手，只有短暂的记忆和娴熟的安装能力，助你在 AI 领域启航。如果你的 Claude Code 配好了模型，在右侧选择它继续和你对话。'
-      : '我是 AI 助手，只有短暂的记忆和娴熟的安装能力，助你在 AI 领域启航。建议先安装并为 Claude Code 配置模型，然后在右侧选择它继续和你对话。'
-    : ccInstalled
-      ? "I'm an AI assistant — short memory, sharp install skills, here to launch you into AI. Once your Claude Code is configured with a model, pick it on the right to keep talking here."
-      : "I'm an AI assistant — short memory, sharp install skills, here to launch you into AI. Install Claude Code and configure a model, then pick it on the right to keep talking here.";
+function ParasiteHint({ ccInstalled }: ParasiteHintProps) {
+  const { t } = useI18n();
+  const tooltip = ccInstalled
+    ? t('mother.parasiteTipInstalled')
+    : t('mother.parasiteTipNotInstalled');
 
   return (
     <span className="group relative inline-flex items-center">

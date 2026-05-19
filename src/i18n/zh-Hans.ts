@@ -38,6 +38,10 @@ const zhHans: Partial<Translations> = {
   'pulse.fetchFailed': '加载失败',
   'pulse.loadingFirst': '正在为您加载…',
   'pulse.empty': '暂无内容',
+  'pulse.relJustNow': '刚刚',
+  'pulse.relMinutes': '{n}分钟前',
+  'pulse.relHours': '{n}小时前',
+  'pulse.relDays': '{n}天前',
   'settings.title': '设置',
   'settings.version': '版本',
   'settings.language': '语言',
@@ -218,10 +222,15 @@ const zhHans: Partial<Translations> = {
   'mother.hintUninstall': '完全卸载 {agent}',
   'mother.hintNetworkInfo': '查看内网/公网IP',
   'mother.hintSecurityAudit': '检测可疑活动',
+  'mother.parasiteTipInstalled':
+    '我是 AI 助手，只有短暂的记忆和娴熟的安装能力，助你在 AI 领域启航。如果你的 Claude Code 配好了模型，在右侧选择它继续和你对话。',
+  'mother.parasiteTipNotInstalled':
+    '我是 AI 助手，只有短暂的记忆和娴熟的安装能力，助你在 AI 领域启航。建议先安装并为 Claude Code 配置模型，然后在右侧选择它继续和你对话。',
+  'terminal.thinking': '思考中',
   'ssh.winNote':
     'Windows 部署 SSH 较为复杂。建议在服务器端下载安装 EchoBird，然后通过"安装与修复"部署本机 SSH。',
   'status.running': '运行中',
   'status.offline': '离线',
-  // Mobile sync
+  'status.notInstalled': '未安装',
 };
 export default zhHans;

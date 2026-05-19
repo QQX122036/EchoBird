@@ -44,6 +44,10 @@ const en: Translations = {
   'pulse.fetchFailed': 'Fetch failed',
   'pulse.loadingFirst': 'Loading…',
   'pulse.empty': 'No items',
+  'pulse.relJustNow': 'just now',
+  'pulse.relMinutes': '{n}m ago',
+  'pulse.relHours': '{n}h ago',
+  'pulse.relDays': '{n}d ago',
   // Settings
   'settings.title': 'SETTINGS',
   'settings.version': 'VERSION',
@@ -251,11 +255,17 @@ const en: Translations = {
   'mother.hintUninstall': 'Completely uninstall {agent}',
   'mother.hintNetworkInfo': 'Show internal/public IP',
   'mother.hintSecurityAudit': 'Detect suspicious activity',
+  'mother.parasiteTipInstalled':
+    "I'm an AI assistant — short memory, sharp install skills, here to launch you into AI. Once your Claude Code is configured with a model, pick it on the right to keep talking here.",
+  'mother.parasiteTipNotInstalled':
+    "I'm an AI assistant — short memory, sharp install skills, here to launch you into AI. Install Claude Code and configure a model, then pick it on the right to keep talking here.",
+  'terminal.thinking': 'thinking',
   'ssh.winNote':
     'Windows SSH deployment is more complex than Linux/macOS. Recommended: install EchoBird on the Windows machine first, then use Install & Repair to set up local SSH access for you.',
   'status.running': 'Running',
   'status.offline': 'Offline',
   'status.complete': 'Complete',
   'status.failed': 'Failed',
+  'status.notInstalled': 'Not installed',
 };
 export { en };

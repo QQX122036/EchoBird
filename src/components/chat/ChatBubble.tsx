@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getModelIcon } from '../cards/ModelCard';
 import { useI18n } from '../../hooks/useI18n';
+import { getSpinnerVerbs, formatSpinnerVerb } from '../../i18n/spinnerVerbs';
 import { mdComponents } from '../../pages/MotherAgent/mdComponents';
 import { IS_LINUX } from '../../utils/platform';
 
@@ -79,98 +80,9 @@ function ReadonlyChips({ chips }: { chips: BubbleChip[] }) {
 // rendered in theme green. Same shape as Claude Code's terminal spinner.
 const SPINNER_GLYPHS = ['·', '✢', '*', '✶', '✻', '✽'];
 const SPINNER_FRAMES = [...SPINNER_GLYPHS, ...[...SPINNER_GLYPHS].reverse()];
-const SPINNER_VERBS_EN = [
-  'Accomplishing',
-  'Architecting',
-  'Brewing',
-  'Bootstrapping',
-  'Calculating',
-  'Cascading',
-  'Channelling',
-  'Cogitating',
-  'Composing',
-  'Computing',
-  'Concocting',
-  'Considering',
-  'Cooking',
-  'Crafting',
-  'Crunching',
-  'Cultivating',
-  'Deciphering',
-  'Deliberating',
-  'Doing',
-  'Effecting',
-  'Envisioning',
-  'Forging',
-  'Formulating',
-  'Generating',
-  'Hatching',
-  'Honing',
-  'Imagining',
-  'Incubating',
-  'Manifesting',
-  'Marinating',
-  'Meditating',
-  'Mulling',
-  'Musing',
-  'Optimizing',
-  'Orchestrating',
-  'Percolating',
-  'Plotting',
-  'Pondering',
-  'Processing',
-  'Reasoning',
-  'Reticulating',
-  'Spelunking',
-  'Spinning',
-  'Stewing',
-  'Synthesizing',
-  'Thinking',
-  'Tinkering',
-  'Transmuting',
-  'Unfurling',
-  'Vibing',
-  'Working',
-  'Wrangling',
-];
-// Chinese verbs — keep the playful Claude-Code-ish vibe ("烹调中…", "揉捏中…").
-const SPINNER_VERBS_ZH = [
-  '思索',
-  '琢磨',
-  '酝酿',
-  '烹调',
-  '雕琢',
-  '沉吟',
-  '推敲',
-  '冥想',
-  '编织',
-  '梳理',
-  '揉捏',
-  '锻造',
-  '调和',
-  '织梦',
-  '谋划',
-  '玩味',
-  '端详',
-  '神游',
-  '钻研',
-  '寻思',
-  '烧脑',
-  '挠头',
-  '浸泡',
-  '发酵',
-  '熬煮',
-  '炮制',
-  '推演',
-  '演算',
-  '召唤',
-  '拨弦',
-  '咕嘟',
-  '搅拌',
-  '编排',
-  '凝聚',
-  '飘忽',
-];
+// Per-locale verb arrays + format wrapper live in src/i18n/spinnerVerbs.ts
+// — moved out so non-en/zh locales (zh-Hant, ja) get native flavor verbs
+// instead of falling through to the English list mid-conversation.
 
 // Linux WebKitGTK pins a CPU core animating the gradient sweep + setInterval
 // glyph cycle, so on Linux we render a static frame instead. One verb,
@@ -178,9 +90,8 @@ const SPINNER_VERBS_ZH = [
 // indicator mounts (i.e. each new agent turn) so it still feels alive.
 function InputDotsStatic() {
   const { locale } = useI18n();
-  const isZh = locale.startsWith('zh');
-  const verbs = isZh ? SPINNER_VERBS_ZH : SPINNER_VERBS_EN;
-  const formatVerb = (v: string) => (isZh ? `正在${v}中…` : `${v}…`);
+  const verbs = getSpinnerVerbs(locale);
+  const formatVerb = (v: string) => formatSpinnerVerb(v, locale);
 
   const [staticGlyph] = useState(
     () => SPINNER_GLYPHS[Math.floor(Math.random() * SPINNER_GLYPHS.length)]
@@ -190,7 +101,7 @@ function InputDotsStatic() {
     const pickRandom = () => formatVerb(verbs[Math.floor(Math.random() * verbs.length)]);
     return pickRandom();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isZh]);
+  }, [locale]);
 
   return (
     <span className="inline-flex items-center gap-2">
@@ -209,9 +120,8 @@ function InputDots() {
 
 function InputDotsAnimated() {
   const { locale } = useI18n();
-  const isZh = locale.startsWith('zh');
-  const verbs = isZh ? SPINNER_VERBS_ZH : SPINNER_VERBS_EN;
-  const formatVerb = (v: string) => (isZh ? `正在${v}中…` : `${v}…`);
+  const verbs = getSpinnerVerbs(locale);
+  const formatVerb = (v: string) => formatSpinnerVerb(v, locale);
   const pickRandom = () => formatVerb(verbs[Math.floor(Math.random() * verbs.length)]);
 
   // Glyph cycle (·✢*✶✻✽ forward + reverse)
@@ -235,7 +145,7 @@ function InputDotsAnimated() {
     setShown(next);
     setPhase('show');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isZh]);
+  }, [locale]);
 
   useEffect(() => {
     if (phase === 'show') {
