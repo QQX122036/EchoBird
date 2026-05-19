@@ -558,7 +558,11 @@ function CourseCard({ course }: { course: Course }) {
 export function AiCoursesMain() {
   const { t, locale } = useI18n();
   const { catalog, initialLoading, syncing, error, selectedCategory, retry } = useAiCourses();
-  const lang: Lang = locale.startsWith('zh') ? 'zh' : 'en';
+  // Only zh-Hans gets the CN supplement (李宏毅 / 李沐 / 飞桨 etc. on Bilibili
+  // and CN-domestic platforms). zh-Hant (TW/HK/MO) and ja users see the
+  // upstream dair-ai EN list — TW/HK devs follow the international AI stack
+  // (PyTorch + CUDA + arXiv), not the CN-domestic Bilibili / 飞桨 ecosystem.
+  const lang: Lang = locale === 'zh-Hans' ? 'zh' : 'en';
 
   const visible = useMemo(() => {
     const langMatched = catalog.courses.filter((c) => c.lang === lang);
@@ -626,7 +630,11 @@ export function AiCoursesMain() {
 export function AiCoursesPanel() {
   const { t, locale } = useI18n();
   const { catalog, selectedCategory, setSelectedCategory } = useAiCourses();
-  const lang: Lang = locale.startsWith('zh') ? 'zh' : 'en';
+  // Only zh-Hans gets the CN supplement (李宏毅 / 李沐 / 飞桨 etc. on Bilibili
+  // and CN-domestic platforms). zh-Hant (TW/HK/MO) and ja users see the
+  // upstream dair-ai EN list — TW/HK devs follow the international AI stack
+  // (PyTorch + CUDA + arXiv), not the CN-domestic Bilibili / 飞桨 ecosystem.
+  const lang: Lang = locale === 'zh-Hans' ? 'zh' : 'en';
 
   // Reset filter when categories of the current lang don't include the selection
   useEffect(() => {

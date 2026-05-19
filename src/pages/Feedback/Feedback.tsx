@@ -28,7 +28,9 @@ const openExternal = (url: string) => shellOpen(url).catch(() => window.open(url
 export function FeedbackMain() {
   const { t, locale } = useI18n();
   const { showToast } = useToast();
-  const isZh = locale.startsWith('zh');
+  // Gitcode mirror only useful for mainland (GFW-blocked GitHub). TW/HK/MO
+  // and JP users reach github.com directly, so they get the email fallback.
+  const isZh = locale === 'zh-Hans';
   const [justCopied, setJustCopied] = useState(false);
 
   const copyLogTail = async () => {

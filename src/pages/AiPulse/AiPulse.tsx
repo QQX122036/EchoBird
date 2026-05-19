@@ -358,7 +358,12 @@ const FEED_SOURCE_KEY = 'pulse:feed-source';
 
 export function AiPulseProvider({ children }: { children: React.ReactNode }) {
   const { locale } = useI18n();
-  const isZhLocale = locale.startsWith('zh');
+  // Content routing intentionally narrower than UI routing: only zh-Hans
+  // (mainland Simplified) gets the CN-aggregated feed + 国内/全球 toggle.
+  // zh-Hant (TW/HK/MO) and ja users see the EN feed — TW/HK devs follow
+  // the international AI stack (NVIDIA/CUDA + arXiv + HN), and the SuYxh
+  // feed is dominated by CN-domestic platforms (Bilibili, 知乎, 飞桨).
+  const isZhLocale = locale === 'zh-Hans';
 
   // zh users get a 国内/全球 toggle; their selection is persisted in
   // localStorage and lives on `zhFeedPreference`. en users always see
@@ -504,7 +509,8 @@ export function AiPulseProvider({ children }: { children: React.ReactNode }) {
 export function AiPulseTitleActions() {
   const { t, locale } = useI18n();
   const { syncing, retry, feedSource, setFeedSource } = useAiPulse();
-  const isZhLocale = locale.startsWith('zh');
+  // Toggle only meaningful for the zh-Hans CN feed; other locales pinned to EN.
+  const isZhLocale = locale === 'zh-Hans';
   return (
     <div className="ml-auto flex-shrink-0 flex items-center gap-2">
       {/* 国内/全球 toggle — only rendered for zh users. Labels are
