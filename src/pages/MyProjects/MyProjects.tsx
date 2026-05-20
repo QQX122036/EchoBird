@@ -83,6 +83,7 @@ export const MyProjectsMain: React.FC = () => {
               {...tool}
               selected={selectedTool === tool.id}
               onClick={() => setSelectedTool(tool.id)}
+              hideVersion
             />
           ))}
           {projects.map((p) => (

@@ -20,6 +20,10 @@ export interface ToolCardProps {
   selected?: boolean;
   onClick?: () => void;
   onMotherAgentInstall?: () => void;
+  /** Hide the "版本: …" line — used on the "我的AI项目" page where
+   *  bundled samples are presented as Vibe-Coding references and the
+   *  version number is just noise. App Manager still renders it. */
+  hideVersion?: boolean;
 }
 
 export const ToolCard = React.memo(
@@ -40,6 +44,7 @@ export const ToolCard = React.memo(
     selected = false,
     onClick,
     onMotherAgentInstall,
+    hideVersion = false,
   }: ToolCardProps) => {
     const { t, locale } = useI18n();
     const displayName =
@@ -102,9 +107,11 @@ export const ToolCard = React.memo(
             <div className="truncate">
               {t('tool.config')}: {installed ? configPath || '-' : '-'}
             </div>
-            <div className="truncate">
-              {t('tool.version')}: {installed ? version || '-' : '-'}
-            </div>
+            {!hideVersion && (
+              <div className="truncate">
+                {t('tool.version')}: {installed ? version || '-' : '-'}
+              </div>
+            )}
           </div>
           {showMotherInstall && (
             <div className="absolute inset-0 flex items-center justify-center">
