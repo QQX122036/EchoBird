@@ -32,9 +32,9 @@ const en: Translations = {
   'myProjects.pickFile': '(click to choose)',
   'myProjects.copyTemplate': 'Copy Reversi models.json template',
   'myProjects.templateCopied': 'models.json template copied to clipboard',
-  'myProjects.deleteTitle': 'Delete Project',
+  'myProjects.deleteTitle': 'Remove from list',
   'myProjects.deleteConfirm':
-    'This project record will be removed from your "My AI Projects" list. This action cannot be undone.',
+    'Removes this entry from your "My AI Projects" list only — the project files on your machine stay where they are.',
   'myProjects.bottomHint':
     'Use the Reversi / Translator models.json as a starting point — Vibe Code your own AI game or app, then swap models with one click.',
   'page.localServer': 'LOCAL LLM',

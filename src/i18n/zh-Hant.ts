@@ -31,8 +31,8 @@ const zhHant: Partial<Translations> = {
   'myProjects.pickFile': '(點擊選擇)',
   'myProjects.copyTemplate': '複製 Reversi 範本到剪貼簿',
   'myProjects.templateCopied': '範本已複製,貼到你專案的 models.json',
-  'myProjects.deleteTitle': '刪除項目',
-  'myProjects.deleteConfirm': '此項目記錄將從「我的AI項目」列表中移除,操作無法復原。',
+  'myProjects.deleteTitle': '從列表移除',
+  'myProjects.deleteConfirm': '僅從「我的AI項目」列表移除該項目,本機上的項目檔案不會被刪除。',
   'myProjects.bottomHint':
     '參考 黑白棋 和 AI翻譯 的 models.json,你可以 Vibe Coding 自己的 AI 項目（AI 遊戲 / AI 應用),裝好後一鍵切換模型。',
   'page.localServer': '本地大模型',

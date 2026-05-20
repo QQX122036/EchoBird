@@ -31,9 +31,9 @@ const ja: Partial<Translations> = {
   'myProjects.pickFile': '(クリックして選択)',
   'myProjects.copyTemplate': 'Reversi の models.json テンプレートをコピー',
   'myProjects.templateCopied': 'クリップボードにコピーしました — models.json に貼り付けてください',
-  'myProjects.deleteTitle': 'プロジェクトを削除',
+  'myProjects.deleteTitle': 'リストから削除',
   'myProjects.deleteConfirm':
-    'このプロジェクトのレコードは「マイ AI プロジェクト」リストから削除されます。この操作は取り消せません。',
+    '「マイ AI プロジェクト」リストから削除するだけで、ローカルのプロジェクトファイル自体は削除されません。',
   'myProjects.bottomHint':
     'Reversi / AI翻訳 の models.json を参考に、自分の AI ゲーム / AI アプリを Vibe Coding できます。ワンクリックでモデル切り替えにも対応。',
   'page.localServer': 'ローカル LLM',
