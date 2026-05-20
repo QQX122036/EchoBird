@@ -242,10 +242,11 @@ const AddProjectDialog: React.FC<{
     []
   );
 
-  const canSave = name.trim().length > 0 && launcherPath && modelsJsonPath;
-
+  // Save is always allowed — a blank entry is a valid "I'll fill this in
+  // later" draft (the user can come back via Edit). The only real
+  // constraint is that an unnamed card looks empty in the list; we leave
+  // that as the user's call, and Delete is one click away if they regret it.
   const handleSave = useCallback(() => {
-    if (!canSave) return;
     const input: MyProjectInput = {
       name: name.trim(),
       iconPath,
@@ -258,17 +259,7 @@ const AddProjectDialog: React.FC<{
       addProject(input);
     }
     onClose();
-  }, [
-    canSave,
-    name,
-    iconPath,
-    launcherPath,
-    modelsJsonPath,
-    editingId,
-    updateProject,
-    addProject,
-    onClose,
-  ]);
+  }, [name, iconPath, launcherPath, modelsJsonPath, editingId, updateProject, addProject, onClose]);
 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center">
@@ -350,8 +341,7 @@ const AddProjectDialog: React.FC<{
           <div className="w-px bg-cyber-border/40" />
           <button
             onClick={handleSave}
-            disabled={!canSave}
-            className="flex-1 px-6 py-3 text-[14px] text-cyber-text hover:bg-cyber-elevated transition-colors font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 px-6 py-3 text-[14px] text-cyber-text hover:bg-cyber-elevated transition-colors font-semibold"
           >
             {t('btn.save')}
           </button>
