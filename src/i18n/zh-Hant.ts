@@ -27,7 +27,7 @@ const zhHant: Partial<Translations> = {
   'myProjects.field.icon': '項目圖示',
   'myProjects.field.launcher': '啟動程式',
   'myProjects.field.models': '模型檔案 (models.json)',
-  'myProjects.placeholder.name': 'e.g: YourProject',
+  'myProjects.placeholder.name': '例如:我的專案',
   'myProjects.pickFile': '(點擊選擇)',
   'myProjects.copyTemplate': '複製 Reversi 範本到剪貼簿',
   'myProjects.templateCopied': '範本已複製,貼到你專案的 models.json',

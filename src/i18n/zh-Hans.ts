@@ -25,7 +25,7 @@ const zhHans: Partial<Translations> = {
   'myProjects.field.icon': '项目图标',
   'myProjects.field.launcher': '启动程序',
   'myProjects.field.models': '模型文件 (models.json)',
-  'myProjects.placeholder.name': 'e.g: YourProject',
+  'myProjects.placeholder.name': '例如:我的项目',
   'myProjects.pickFile': '(点击选择)',
   'myProjects.copyTemplate': '复制 Reversi 模板到剪贴板',
   'myProjects.templateCopied': '模板已复制,粘贴到你项目的 models.json',

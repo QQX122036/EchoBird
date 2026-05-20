@@ -27,7 +27,7 @@ const ja: Partial<Translations> = {
   'myProjects.field.icon': 'アイコン',
   'myProjects.field.launcher': '起動プログラム',
   'myProjects.field.models': 'モデルファイル (models.json)',
-  'myProjects.placeholder.name': 'e.g: YourProject',
+  'myProjects.placeholder.name': '例:マイプロジェクト',
   'myProjects.pickFile': '(クリックして選択)',
   'myProjects.copyTemplate': 'リバーシ の models.json テンプレートをコピー',
   'myProjects.templateCopied': 'クリップボードにコピーしました — models.json に貼り付けてください',
