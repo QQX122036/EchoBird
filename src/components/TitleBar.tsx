@@ -1,15 +1,16 @@
 // Custom frameless window title bar
 import React, { useState, useEffect } from 'react';
-import { Settings, Minus, Maximize2, Minimize2, X } from 'lucide-react';
+import { Settings, Minus, Maximize2, Minimize2, X, MessageSquare } from 'lucide-react';
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
 import { getSettings, saveSettings } from '../api/tauri';
 import { CloseWindowDialog } from './CloseWindowDialog';
 
 interface TitleBarProps {
   onSettingsClick?: () => void;
+  onFeedbackClick?: () => void;
 }
 
-export const TitleBar: React.FC<TitleBarProps> = ({ onSettingsClick }) => {
+export const TitleBar: React.FC<TitleBarProps> = ({ onSettingsClick, onFeedbackClick }) => {
   const handleMinimize = () => getCurrentWindow().minimize();
   const [isMaximized, setIsMaximized] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
@@ -114,8 +115,16 @@ export const TitleBar: React.FC<TitleBarProps> = ({ onSettingsClick }) => {
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
           <button
+            onClick={onFeedbackClick}
+            className="h-full px-4 flex items-center justify-center text-cyber-text-secondary hover:bg-cyber-text/20 hover:text-cyber-text transition-colors"
+            title="Feedback"
+          >
+            <MessageSquare size={13} />
+          </button>
+          <button
             onClick={onSettingsClick}
             className="h-full px-4 flex items-center justify-center text-cyber-text-secondary hover:bg-cyber-text/20 hover:text-cyber-text transition-colors"
+            title="Settings"
           >
             <Settings size={13} />
           </button>

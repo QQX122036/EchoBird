@@ -92,6 +92,7 @@ function App() {
   // Stores — selector form so App.tsx (the root of the entire tree) only
   // re-renders when activePage flips, not on every motherNewMessage tick.
   const activePage = useNavigationStore((s) => s.activePage);
+  const setActivePage = useNavigationStore((s) => s.setActivePage);
   const setUpdateAvailable = useNavigationStore((s) => s.setUpdateAvailable);
   const scanTools = useToolsStore((s) => s.scanTools);
   // When a user project is selected on "我的AI项目", the right panel +
@@ -211,7 +212,10 @@ function App() {
                         className={`flex flex-col h-screen w-full bg-cyber-bg overflow-hidden ${isMaximized ? '' : 'rounded-xl'}`}
                       >
                         {/* Title bar */}
-                        <TitleBar onSettingsClick={() => setShowSettings(true)} />
+                        <TitleBar
+                          onSettingsClick={() => setShowSettings(true)}
+                          onFeedbackClick={() => setActivePage('feedback')}
+                        />
                         <div className="flex flex-1 overflow-hidden text-cyber-text font-sans p-4 gap-0 relative isolate">
                           {/* Sidebar */}
                           <SidebarConnected onSettingsClick={() => setShowSettings(true)} />

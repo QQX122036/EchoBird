@@ -8,7 +8,6 @@ import {
   Newspaper,
   Star,
   GraduationCap,
-  MessageSquare,
   FolderHeart,
 } from 'lucide-react';
 import { NavItem } from './NavItem';
@@ -135,12 +134,6 @@ export const Sidebar = ({
           label={t('nav.motherAgent')}
           active={activePage === 'mother'}
           onClick={() => onPageChange('mother')}
-        />
-        <NavItem
-          icon={<MessageSquare size={20} />}
-          label={t('nav.feedback')}
-          active={activePage === 'feedback'}
-          onClick={() => onPageChange('feedback')}
         />
       </div>
 
