@@ -144,7 +144,17 @@ export const MyProjectsBottom: React.FC = () => {
   const hasModelSelected = !!chosenModelId;
   const willApply = agreedConfigPolicy && hasModelSelected;
   const willLaunch = launchAfterApply;
-  const buttonDisabled = !project || (!willApply && !willLaunch) || isLaunching;
+  // Page semantic: 我的AI项目 exists for model management. A user only
+  // bothers registering a project here (name + icon + launcher +
+  // models.json path — 4 fields of effort) BECAUSE they want EchoBird
+  // to swap models for it. Pure-launcher shortcuts have OS-level
+  // alternatives (double-click, taskbar pin, etc.) — we should NOT
+  // degrade this page into a generic launcher. So gate every action on
+  // having a model picked. AppManager differs (it surfaces auto-detected
+  // tools, some of which legitimately have no model concept), so that
+  // page's loose gate stays as-is.
+  const buttonDisabled =
+    !project || !hasModelSelected || (!willApply && !willLaunch) || isLaunching;
 
   const handleLaunch = async () => {
     if (!project || isLaunching) return;
