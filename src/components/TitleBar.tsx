@@ -1,9 +1,10 @@
 // Custom frameless window title bar
 import React, { useState, useEffect } from 'react';
-import { Settings, Minus, Maximize2, Minimize2, X, MessageSquare } from 'lucide-react';
+import { Settings, Minus, Maximize2, Minimize2, X } from 'lucide-react';
 import { getCurrentWindow, LogicalSize } from '@tauri-apps/api/window';
 import { getSettings, saveSettings } from '../api/tauri';
 import { CloseWindowDialog } from './CloseWindowDialog';
+import { useI18n } from '../hooks/useI18n';
 
 interface TitleBarProps {
   onSettingsClick?: () => void;
@@ -11,6 +12,7 @@ interface TitleBarProps {
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({ onSettingsClick, onFeedbackClick }) => {
+  const { t } = useI18n();
   const handleMinimize = () => getCurrentWindow().minimize();
   const [isMaximized, setIsMaximized] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
@@ -116,10 +118,9 @@ export const TitleBar: React.FC<TitleBarProps> = ({ onSettingsClick, onFeedbackC
         >
           <button
             onClick={onFeedbackClick}
-            className="h-full px-4 flex items-center justify-center text-cyber-text-secondary hover:bg-cyber-text/20 hover:text-cyber-text transition-colors"
-            title="Feedback"
+            className="h-full px-3 flex items-center justify-center text-[12px] font-mono text-cyber-text-secondary hover:bg-cyber-text/20 hover:text-cyber-text transition-colors"
           >
-            <MessageSquare size={13} />
+            {t('nav.feedback')}
           </button>
           <button
             onClick={onSettingsClick}
