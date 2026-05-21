@@ -12,9 +12,15 @@ EchoBird desktop app, served from `echobird.ai`. Edge-cached, CORS open, GET onl
 
 The pulse workflow:
 1. Mirrors the ZH feed from [SuYxh/ai-news-aggregator](https://github.com/SuYxh/ai-news-aggregator).
-2. Builds the EN feed via [scripts/build_en_pulse.py](../../scripts/build_en_pulse.py).
-3. Runs [scripts/filter_pulse.py](../../scripts/filter_pulse.py) to strip
-   blocklisted hosts (currently `x.com` / `twitter.com`) before commit.
+2. Merges [aihot.virxact.com](https://aihot.virxact.com/) curated picks
+   (~80/day, LLM-normalized Chinese titles) into the 7d ZH feed via
+   [scripts/merge_aihot.py](../../scripts/merge_aihot.py). Items arrive
+   as a pseudo-source with `site_id="aihot"` / `site_name="AI HOT 精选"`
+   so the existing client surfaces the curation source for free.
+3. Builds the EN feed via [scripts/build_en_pulse.py](../../scripts/build_en_pulse.py).
+4. Runs [scripts/filter_pulse.py](../../scripts/filter_pulse.py) to strip
+   blocklisted hosts (`x.com` / `twitter.com`) and promo-marker titles
+   (`【广告】` / `【推广】` / `【赞助】` / `[AD]` / `[PR]` etc.) before commit.
 
 Sourcing through our own repo means all five frontend mirrors (worker,
 Tencent COS, jsDelivr-on-our-repo, raw-on-our-repo, plus the upstream

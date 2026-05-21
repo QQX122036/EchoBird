@@ -24,12 +24,25 @@ from pathlib import Path
 #   twitter.com / *.twitter.com
 BLOCKED_HOST_RE = re.compile(r"^https?://([^/]+\.)?(x|twitter)\.com/", re.IGNORECASE)
 
-# Match items whose title is platform moderation/announcement noise.
-# Upstream aggregators sometimes wrap the source platform's own governance
-# posts (e.g. juejin's "【社区公告】" account-cleanup / crawler-ban
-# announcements) as "news" items — moderation, not AI content. Add new
-# patterns to the alternation as we find them.
-BLOCKED_TITLE_RE = re.compile(r"社区公告")
+# Match items whose title is platform moderation/announcement noise OR
+# obvious paid placement / promotional content.
+#
+# - "社区公告"          juejin / similar moderation announcements wrapped as news
+# - bracketed markers   【广告】 / 【推广】 / 【赞助】 / 【AD】 / 【PR】 / 【Sponsored】
+#                       (and ASCII-bracket variants) — paid placements from KOLs
+# - title-prefix promos "广告：…", "推广 | …", "赞助：…" — non-bracketed promo prefixes
+#
+# Patterns are intentionally narrow so legitimate articles whose body
+# discusses advertising/sponsorship (e.g. "Anthropic 拒绝 X 公司赞助",
+# "广告业的 AI 转型") do NOT get filtered. Add new shapes as we see them.
+BLOCKED_TITLE_RE = re.compile(
+    r"(?:"
+    r"社区公告"
+    r"|[【\[](?:广告|推广|赞助|AD|PR|Sponsored)[】\]]"
+    r"|^(?:广告|推广|赞助)[:：\s|]"
+    r")",
+    re.IGNORECASE,
+)
 
 
 def filter_file(path: Path) -> tuple[int, int]:

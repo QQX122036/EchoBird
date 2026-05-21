@@ -11,7 +11,12 @@ name: Refresh Pulse Data
 
 on:
   schedule:
-    - cron: '15 */6 * * *'   # every 6 hours, offset 15min from the hour
+    # Every 2 hours, offset 15min from the hour. Tuned to track SuYxh's
+    # ~3-4h upstream cadence: most ticks pick up a new snapshot, the rest
+    # no-op via the "skip-if-unchanged" guard at commit time. Worst-case
+    # user-visible latency drops from ~11h (6h cron) to ~7h (2h cron + CF
+    # cache TTL + client 30min refresh).
+    - cron: '15 */2 * * *'
   workflow_dispatch:
 
 permissions:
@@ -27,6 +32,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        run: python -m pip install --quiet requests feedparser beautifulsoup4
+
       - name: Fetch upstream pulse files (zh)
         run: |
           set -euo pipefail
@@ -41,26 +54,24 @@ jobs:
           done
           ls -lh docs/pulse/
 
-      # The upstream ZH aggregator wraps individual KOL X/Twitter posts as
-      # "news" items (~8% of the 7-day window). Those are editorial /
-      # promotional, not reporting — strip them at refresh time so every
-      # downstream mirror (worker, Tencent COS, jsDelivr-on-our-repo) sees
-      # the same clean payload. Re-emits total_items so the frontend's
-      # header counts stay consistent.
-      - name: Filter ZH pulse files (drop x.com / twitter.com)
-        run: |
-          set -euo pipefail
-          python3 scripts/filter_pulse.py docs/pulse/latest-24h.json docs/pulse/latest-7d.json
+      # Inject aihot.virxact.com curated picks (~80/day) into the 7d feed as
+      # a parallel pseudo-source. They land as site_id="aihot",
+      # site_name="AI HOT 精选" and are merged by URL — when the same URL
+      # appears in both pools, aihot's LLM-normalized title wins. Failure to
+      # reach aihot is non-fatal: the workflow proceeds with SuYxh-only data.
+      - name: Merge aihot curated picks into 7d feed
+        run: python scripts/merge_aihot.py docs/pulse/latest-7d.json
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
+      # Apply blocklist AFTER the merge so aihot items are filtered too:
+      #   - host blocklist : x.com / twitter.com (individual KOL posts)
+      #   - title blocklist: moderation noise + paid-placement markers
+      # Re-emits total_items so the frontend's header counts stay consistent.
+      - name: Filter ZH pulse files (blocklist hosts + promo titles)
+        run: python scripts/filter_pulse.py docs/pulse/latest-24h.json docs/pulse/latest-7d.json
 
       - name: Build en-only pulse file
         run: |
           set -euo pipefail
-          python -m pip install --quiet requests feedparser beautifulsoup4
           python scripts/build_en_pulse.py
           # Sanity: file exists and parses as JSON with at least one item
           python -c "import json,sys; d=json.load(open('docs/pulse/latest-7d-en.json',encoding='utf-8')); assert d.get('total_items',0) > 0, 'empty feed'; print(f'en feed total_items={d[\"total_items\"]}')"

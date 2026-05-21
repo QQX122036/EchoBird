@@ -40,7 +40,7 @@ import { useConfirm } from '../../components/ConfirmDialog';
 // been chosen yet. Kept in English path style across all locales — the
 // example values themselves are filesystem paths, not translatable copy.
 const PLACEHOLDER_ICON = 'e.g: ~/YourProject/xxx.ico/svg/png';
-const PLACEHOLDER_LAUNCHER = 'e.g: ~/YourProject/xxx.exe';
+const PLACEHOLDER_LAUNCHER = 'e.g: ~/YourProject/xxx.exe / xxx.app / xxx';
 const PLACEHOLDER_MODELS = 'e.g: ~/YourProject/models.json';
 
 // Convert any stored icon path into something the WebView can render.

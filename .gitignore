@@ -69,6 +69,7 @@ tmp/
 scripts/*
 !scripts/build_en_pulse.py
 !scripts/filter_pulse.py
+!scripts/merge_aihot.py
 
 # llama-server binaries (downloaded during CI build)
 electron/tools/llama-server/bin/
