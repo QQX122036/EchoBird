@@ -12,39 +12,185 @@ visit https://www.gnu.org/licenses/agpl-3.0.html.
 ORIGINAL DESIGNS AND CONCEPTS
 ================================================================================
 
-The following designs, features, and architectural patterns were originated
-by the EchoBird project. The source code that implements them is governed
-by the AGPL-3.0 license; the underlying ideas are documented here so that
-downstream forks and reimplementations can credit prior art appropriately.
+The following designs, features, and UI/UX patterns were originated by the
+EchoBird project. The source code that implements them is governed by the
+AGPL-3.0 license; the *underlying ideas, interface arrangements, and
+combinations* are documented here for two reasons:
+  (a) so honest downstream forks and reimplementations can credit prior
+      art appropriately, and
+  (b) to establish a documented priority claim — including specific UI
+      creative points and first-use evidence — for any future trade-dress
+      or look-and-feel dispute. We list creative points individually so
+      it is clear which elements are claimed; the COMBINED TRADE DRESS
+      NOTICE further below addresses how the combination of these
+      elements is itself protectable.
+
+--------------------------------------------------------------------------------
+A. USER-INTERFACE TRADE DRESS
+--------------------------------------------------------------------------------
+
+The four entries below are claimed as the distinctive user-interface
+"look and feel" of EchoBird. Each entry lists (1) the originating concept
+and (2) specific UI creative points that define the pattern, plus
+(3) first-public-commit evidence for priority.
 
   1. Mother Agent (internal codename) / 安装与修复 (user-facing UI name)
-     — An AI-driven flow that installs and repairs AI coding tools, agents,
-     and CLIs. Supports both local and remote execution targets.
-     First public commit: 2026-03-02 (src/pages/MotherAgent.tsx, 1410 lines
-     at commit 546a14ae).
+
+     Concept — An autonomous AI agent embedded as a first-class top-level
+     surface inside a desktop application, whose ENTIRE PURPOSE is
+     installing, repairing, and deploying OTHER agents and AI tools.
+     Any AI agent can technically install software; what is original to
+     EchoBird is packaging this capability as its own dedicated user-
+     facing product surface rather than burying it inside a settings or
+     "advanced" page.
+
+     Specific UI creative points:
+       - Independent top-level navigation entry (not nested under any
+         tool's own settings)
+       - Conversational installation flow (not a step-wizard, not a
+         checkbox list, not a CLI prompt)
+       - Local-execution and remote-execution targets unified under the
+         same chat surface (one conversation, two back-end execution
+         paths chosen contextually)
+       - Persona-style framing of the deployment agent (avatar, name,
+         dialog tone) rather than a faceless task runner
+
+     First public commit: 2026-03-02 (src/pages/MotherAgent.tsx, 1410
+     lines at commit 546a14ae).
 
   2. Model Nexus / 模型中心 — "Configure once, used everywhere"
-     A unified model data hub architecture where a single set of model
-     configurations (API key, base URL, model ID, protocol) drives multiple
-     distinct user-facing scenarios (Install & Repair, Local LLM, My AI
-     Projects, App Manager) without any per-scenario re-configuration.
-     First public commit: 2026-03-02 (initial model directory and icons);
-     dedicated "Model Nexus" naming: 2026-03-26.
 
-  3. 我的AI项目 / My AI Projects
-     A user-facing flow for managing vibe-coded apps and games with
-     per-project model assignment. Each user project lives as its own card
-     in EchoBird with editable model bindings and a one-click launch.
-     First public commit: 2026-05-20 (src/pages/MyProjects/).
+     Concept — A central pool of model configurations (API key, base URL,
+     model ID, protocol) presented as a navigable list, structurally
+     positioned as the single data source that every other user-facing
+     scenario draws from. Configuring a model once in this pool causes it
+     to be available across Install & Repair, Local LLM, My AI Projects,
+     and App Manager without any per-scenario re-entry of credentials.
 
-  4. 应用管理 / App Manager
-     A one-click launch and management panel for AI / Agent applications
-     and games. Tools are registered via paths.json metadata; the same UI
-     handles install, model swap, and launch with no terminal interaction.
-     First public commit: 2026-03-02 (src/pages/AppManager.tsx, 674 lines
-     at commit 546a14ae).
+     Specific UI creative points:
+       - Two-column layout: main list of all model cards on the left;
+         per-model detail/edit panel on the right
+       - The model list is structurally a "pool" consumed by other
+         scenarios — not a settings sub-page subordinate to any one tool
+       - Right-edge inline "+" shortcut button for quick-add (not a
+         toolbar-top button)
+       - Inline one-click latency-test ("ping") before commit, embedded
+         on each model card
+       - Clicking a card opens the detail/edit view in the same right
+         panel (no modal, no page navigation)
+
+     First public commit: 2026-03-02 (initial model directory in
+     docs/api/store/models.json and icon set at commit 546a14ae);
+     dedicated "Model Nexus" naming: 2026-03-26 (commit 1ae49436);
+     full page extraction at commit d80030aa (2026-03-29).
+
+  3. App Manager + My AI Projects (shared UI container)
+
+     Concept — A unified card-grid + right-side-detail container
+     that presents two distinct entity types — (a) official AI / Agent
+     applications and games and (b) the user's own vibe-coded
+     applications and games — through the same UI surface, so the user's
+     own projects sit visually alongside official tools as first-class
+     citizens. The right-side panel handles model selection and one-click
+     "apply" for the selected entity, regardless of which type.
+
+     Specific UI creative points:
+       - Card-grid main area + right-side detail panel two-column layout
+       - One card = one tool or one user project; all actions for that
+         entity (launch / select model / apply / configure) collapse
+         into the card-plus-right-panel pair
+       - The same ToolCard component renders both official tools and
+         user-defined Vibe-Coded projects (MyProjects.tsx imports and
+         reuses the AppManager card)
+       - Right panel "select model → one-click apply" linear flow
+         (no submit button confusion, no separate save state)
+       - Per-card "restore to official" affordance as the first row of
+         the model list
+
+     First public commits: AppManager — 2026-03-02 (src/pages/
+     AppManager.tsx, 674 lines at commit 546a14ae); MyProjects —
+     2026-05-20 (src/pages/MyProjects/ at commit 05a35d13).
+
+  4. LocalServer / 一键本地大模型 — One-click local LLM deployment
+
+     Concept — A desktop-embedded UI that compresses the otherwise
+     terminal-heavy process of installing a Python environment,
+     downloading a model weight, picking quantization, configuring a
+     runtime, and exposing OpenAI-compatible + Anthropic-compatible
+     endpoints into a single page with a START button. The point of
+     originality is the pairing of multiple LLM runtimes side-by-side
+     under one UI, with all the surrounding deployment friction hidden.
+
+     Specific UI creative points:
+       - Three runtime engines presented as parallel options under one
+         picker (vLLM / SGLang / llama.cpp) — not a single-engine app
+         with the others as plugins
+       - GPU detection surfaced as a UI element (not a hidden
+         auto-config), with the detected backend visible to the user
+       - Runtime-aware parameter adaptation: switching engine auto-locks
+         "GPU Full / GPU Auto" compute selection to the engine's
+         constraints (vLLM / SGLang lock to GPU; llama.cpp keeps the
+         full GPU/CPU spectrum)
+       - A single "START" button that simultaneously brings up the
+         OpenAI-compatible endpoint AND the Anthropic-compatible
+         endpoint from the same model weight
+       - Quantization picker integrated with model download flow on the
+         same page (no separate "downloads" tab)
+
+     First public commit: 2026-03-02 (src/pages/LocalServer.tsx, 1102
+     lines at commit 546a14ae).
+
+================================================================================
+COMBINED TRADE DRESS NOTICE
+================================================================================
+
+The four UI/UX designs listed in Section A are individually identifiable
+and individually claimed; they also constitute, in combination, the
+distinctive "look and feel" — the trade dress — of EchoBird as a
+product.
+
+A re-implementation that adopts THREE OR MORE of the four UI patterns
+listed in Section A side-by-side in a single competing desktop
+application is presumed to derive from EchoBird's trade dress unless
+the implementer can produce independently-documented prior work
+proving otherwise. Adoption of a single pattern in isolation is not,
+by itself, treated as infringement: individual elements are common
+across the industry, but the SPECIFIC COMBINATION is original to
+EchoBird as published 2026-03-02 onward.
+
+This notice does not waive any other available legal protection. It is
+a written declaration of EchoBird's trade-dress priority and the
+intended scope of enforcement, placed here so that any later party
+operating in the same space is on actual notice of the claim from
+2026-05-22 forward.
+
+整体商业外观声明
+================
+
+A 段所列四项 UI/UX 设计单独可识别、单独主张;在组合层面,它们共同
+构成 EchoBird 作为产品的**独特「整体形态与感觉」(trade dress /
+商业外观)**。
+
+若另一款竞争性桌面应用在 **同一个产品中并列采用其中三项或更多** A 段
+所列 UI 模式,在该实施方无法出示**独立留存的更早原创证据**的情况下,
+推定为对 EchoBird 整体商业外观的衍生使用。**单独采用其中某一项**
+本身不视为侵权 —— 单一元素在行业内常见,但**这套具体组合**自
+2026-03-02 公开发布以来,为 EchoBird 首创。
+
+本声明不放弃任何其他可用的法律保护途径,仅作为对 EchoBird trade
+dress 主张优先权和拟主张执行范围的书面声明,自 2026-05-22 起置于
+此处,作为对后续在同一领域运营的任何主体的事实告知。
+
+--------------------------------------------------------------------------------
+B. ARCHITECTURAL / TECHNICAL PATTERNS
+--------------------------------------------------------------------------------
+
+The following is an architectural originality claim, not a UI/UX trade
+dress claim, and is therefore not covered by the Combined Trade Dress
+Notice above:
 
   5. Codex Translator with Spec-Pure Passthrough
+
      A Responses ↔ Chat Completions translator (and Anthropic Messages
      equivalent) that deliberately forwards only OpenAI-spec-canonical
      fields and refuses per-vendor shimming for upstream non-compliance.
@@ -52,11 +198,14 @@ downstream forks and reimplementations can credit prior art appropriately.
      keeps the natural feedback chain to vendors intact and avoids
      accumulating tech debt from speculative compatibility layers.
      First public commit: 2026-03-04 onward (originally under
-     tools/codex/, later moved to src-tauri/src/services/codex_proxy/).
+     tools/codex/, later moved to src-tauri/src/services/codex_proxy/
+     and src-tauri/src/services/codex_proxy/ in the secret crate split).
 
-These innovations are protected as original expression under copyright law
-and, where applicable, as common-law trademarks. See TRADEMARKS.md for the
-brand and naming policy.
+--------------------------------------------------------------------------------
+
+These innovations are protected as original expression under copyright
+law, as documented trade dress, and where applicable as common-law
+trademarks. See TRADEMARKS.md for the brand and naming policy.
 
 ================================================================================
 THIRD-PARTY ASSETS (ICONS / ARTWORK)
