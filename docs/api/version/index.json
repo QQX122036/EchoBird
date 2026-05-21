@@ -1,5 +1,5 @@
 {
-  "version": "4.9.0",
-  "releaseDate": "2026-05-20",
+  "version": "4.9.1",
+  "releaseDate": "2026-05-21",
   "releaseNotes": "## 中文\n\n**v4.9.0**\n- 支持用户自己 Vibe Coding 的应用或游戏切换模型 — 新页面「我的AI项目」一键管理\n- 顶栏新增「问题反馈」入口,反馈链路更短\n- 多语言完善:Reversi / AI 翻译 在日文 / 繁体中文界面下显示本地名称\n\n**近期亮点**\n- 繁体中文 / 日文界面(v4.8.8)\n- Linux 本地大模型支持三引擎并列:vLLM / SGLang / llama.cpp(v4.8.8)\n- Codex 官方账号与第三方模型丝滑切换,两端聊天记录独立保留(v4.8.6 / v4.8.8)\n- Grok Build CLI(xAI)集成(v4.8.1)\n\n## English\n\n**v4.9.0**\n- EchoBird now supports model switching for your own vibe-coded apps and games — manage them in the new \"My AI Projects\" page\n- Feedback entry moved to the title bar — shorter feedback path\n- Reversi / AI Translator display localized names in Japanese / Traditional Chinese UI\n\n**Recent highlights**\n- Traditional Chinese / Japanese UI (v4.8.8)\n- Linux local LLM supports three engines side-by-side: vLLM / SGLang / llama.cpp (v4.8.8)\n- Codex: smooth switching between official account and third-party models, each side keeps its own chat history (v4.8.6 / v4.8.8)\n- Grok Build CLI (xAI) integration (v4.8.1)\n\n## 日本語\n\n**v4.9.0**\n- ユーザー自身が Vibe Coding したアプリ / ゲームのモデル切り替えに対応 — 新ページ「マイ AI プロジェクト」で一括管理\n- 「フィードバック」入口をタイトルバーに移動 — フィードバック導線を短縮\n- リバーシ / AI 翻訳 が日本語 / 繁体字中国語 UI で現地名表示\n\n**最近のハイライト**\n- 繁体字中国語 / 日本語インターフェース対応 (v4.8.8)\n- Linux ローカル LLM が 3 エンジン並列対応:vLLM / SGLang / llama.cpp (v4.8.8)\n- Codex 公式アカウントとサードパーティモデルをスムーズに切り替え、双方のチャット履歴を独立保持 (v4.8.6 / v4.8.8)\n- Grok Build CLI (xAI) 統合 (v4.8.1)"
 }
