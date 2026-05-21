@@ -88,25 +88,51 @@ shipped:
 **Relationship diagram:**
 
 ```
-                       ┌─────────────────────┐
-                       │   Model Nexus       │
-                       │   (central pool)    │
-                       └──────────┬──────────┘
-                                  │ one configuration drives all four
-        ┌─────────────┬───────────┼───────────┬─────────────┐
-        ▼             ▼           ▼           ▼             ▼
-   ┌─────────┐  ┌──────────┐ ┌─────────┐ ┌───────────┐ ┌──────────────┐
-   │  App    │  │ Local    │ │ Mother  │ │ My AI     │ │ (any future  │
-   │ Manager │  │ Server   │ │ Agent   │ │ Projects  │ │ scenario)    │
-   └─────────┘  └──────────┘ └─────────┘ └───────────┘ └──────────────┘
-   2026-03-02   2026-03-02   2026-03-02   2026-05-20    — extensible —
+                            ┌─────────────────────┐
+                            │   Local Server      │
+                            │   2026-03-02        │
+                            │   (model producer)  │
+                            └──────────┬──────────┘
+                                       │ locally-deployed LLMs
+                                       │ enter the central pool
+                                       ▼
+                       ┌──────────────────────────────────┐
+                       │           Model Nexus            │
+                       │       central model pool         │
+                       │  • Aggregates remote/user-       │
+                       │    configured + local-deployed   │
+                       │  • UI shows remote/user-         │
+                       │    configured only; local        │
+                       │    models hidden here (managed   │
+                       │    via Local Server) but live    │
+                       │    in the same pool              │
+                       │   2026-03-02 / 2026-03-26        │
+                       └──────────────┬───────────────────┘
+                                      │ each consumer below can
+                                      │ select ANY model in the
+                                      │ pool — remote OR local
+        ┌─────────────────────────────┼─────────────────────────────┐
+        ▼                             ▼                             ▼
+   ┌──────────────┐             ┌──────────────┐             ┌─────────────────┐
+   │  App Manager │             │ Mother Agent │             │ My AI Projects  │
+   │  2026-03-02  │             │ 2026-03-02   │             │ 2026-05-20      │
+   └──────────────┘             └──────────────┘             └─────────────────┘
+
+           (Local Server is the only one of the four UI surfaces that
+            FEEDS the pool; the other three READ from it. This dual
+            role of Local Server is intentional architecture, not
+            convenience — see §4 model-bound condition.)
 ```
 
 The "configure once, used everywhere" relationship between Model Nexus
-and the four user-facing surfaces — including the **specific UI grammar
-shared between App Manager and My AI Projects** (same card-grid +
-right-panel container, same ToolCard component, same model-apply flow)
-— is the product-level originality being claimed.
+and its consumers — combined with **Local Server's role as the only
+producer-side surface** that injects locally-deployed LLMs into the
+same pool — and the **specific UI grammar shared between App Manager
+and My AI Projects** (same card-grid + right-panel container, same
+ToolCard component, same model-apply flow), is the product-level
+originality being claimed. The asymmetric placement of Local Server
+above the pool (producer) and the other three surfaces below it
+(consumers) is part of the trade dress, not an incidental layout.
 
 ### 4. The reference-app pattern — the most unprecedented piece
 
@@ -409,24 +435,49 @@ EchoBird **首日公开 commit**(2026-03-02,`546a14ae`)在同一个 Tauri
 **关系示意图:**
 
 ```
-                       ┌─────────────────────┐
-                       │   Model Nexus       │
-                       │   中央模型池        │
-                       └──────────┬──────────┘
-                                  │  一处配置,四处生效
-        ┌─────────────┬───────────┼───────────┬─────────────┐
-        ▼             ▼           ▼           ▼             ▼
-   ┌─────────┐  ┌──────────┐ ┌─────────┐ ┌───────────┐ ┌──────────────┐
-   │  应用    │  │ 本地大   │ │ 安装与  │ │ 我的 AI   │ │  (未来场景)  │
-   │  管理    │  │ 模型     │ │ 修复    │ │ 项目      │ │              │
-   └─────────┘  └──────────┘ └─────────┘ └───────────┘ └──────────────┘
-   2026-03-02   2026-03-02   2026-03-02   2026-05-20    — 可扩展 —
+                            ┌─────────────────────┐
+                            │   本地大模型         │
+                            │   Local Server      │
+                            │   2026-03-02        │
+                            │   (模型生产者)      │
+                            └──────────┬──────────┘
+                                       │  本地部署的 LLM
+                                       │  进入中央模型池
+                                       ▼
+                       ┌──────────────────────────────────┐
+                       │           Model Nexus            │
+                       │         中央模型池               │
+                       │  • 池子聚合:远程/用户配置 +     │
+                       │    本地部署的模型                │
+                       │  • UI 显示:仅远程/用户配置;    │
+                       │    本地模型在 Nexus 页隐藏       │
+                       │    (由本地大模型页管理),       │
+                       │    但仍在同一池子里              │
+                       │   2026-03-02 / 2026-03-26        │
+                       └──────────────┬───────────────────┘
+                                      │  以下三个消费者都能
+                                      │  从池子里选**任意**模型
+                                      │  (远程 OR 本地)
+        ┌─────────────────────────────┼─────────────────────────────┐
+        ▼                             ▼                             ▼
+   ┌──────────────┐             ┌──────────────┐             ┌─────────────────┐
+   │   应用管理   │             │  安装与修复  │             │  我的 AI 项目    │
+   │ App Manager  │             │ Mother Agent │             │ My AI Projects  │
+   │ 2026-03-02   │             │ 2026-03-02   │             │ 2026-05-20      │
+   └──────────────┘             └──────────────┘             └─────────────────┘
+
+         (本地大模型是四个 UI 界面中**唯一向池子注入模型**的;
+          其他三个**从池子读取**。本地大模型的「生产者 + 消费者」
+          双重身份是有意为之的架构,不是凑数 —— 详见 §4 模型绑定条件。)
 ```
 
-「**一处配置,四处生效**」—— Model Nexus 与四个用户面向界面之间的这种
-**主从结构**,以及**应用管理与我的 AI 项目共享同一种 UI 语法**(同样的
-卡片网格 + 右侧详情面板容器、同样的 ToolCard 组件、同样的模型应用流),
-是我们主张的**产品级原创**。
+「**一处配置,四处生效**」—— Model Nexus 与其消费者之间的这种关系、
+**本地大模型作为唯一的生产者侧界面**向池子注入本地部署 LLM 的角色,
+以及**应用管理与我的 AI 项目共享同一种 UI 语法**(同样的卡片网格 +
+右侧详情面板容器、同样的 ToolCard 组件、同样的模型应用流),共同
+构成我们主张的**产品级原创**。**本地大模型在池子上方(生产者)+
+其他三个界面在池子下方(消费者)**的非对称布局,是 trade dress 的
+一部分,不是偶然排版。
 
 ### 4. 参考应用模板模式 —— 最前无古人的一笔
 
