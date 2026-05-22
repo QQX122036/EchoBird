@@ -1,0 +1,138 @@
+{
+  "categories": ["学习平台", "机器学习", "深度学习", "自然语言处理", "计算机视觉", "大模型"],
+  "courses": [
+    {
+      "id": "cn-claude-founders-playbook",
+      "name": "Claude 教你用 AI 创业",
+      "url": "https://coffeecli.com/courses/founders-playbook",
+      "description": "面向独立开发者与创业者的 AI 实战课,讲解如何用 Claude 等大模型搭建产品并跑通商业闭环",
+      "category": "大模型"
+    },
+    {
+      "id": "cn-lihongyi-ml",
+      "name": "李宏毅 · 机器学习",
+      "url": "https://www.bilibili.com/video/BV1Wv411h7kN",
+      "description": "台大李宏毅教授,中文圈最受欢迎的机器学习课程,涵盖 ML / DL / 强化学习 / Transformer / Diffusion",
+      "category": "机器学习"
+    },
+    {
+      "id": "cn-andrew-ng-ml",
+      "name": "吴恩达 · 机器学习",
+      "url": "https://www.bilibili.com/video/BV1Bq421A74G",
+      "description": "斯坦福 CS229 经典机器学习课程,B站官方中文字幕版",
+      "category": "机器学习"
+    },
+    {
+      "id": "cn-andrew-ng-dl",
+      "name": "吴恩达 · 深度学习专项课",
+      "url": "https://www.bilibili.com/video/BV1FT4y1E74V",
+      "description": "深度学习五部曲:神经网络与深度学习 / 改善深层 NN / 结构化机器学习项目 / CNN / 序列模型",
+      "category": "深度学习"
+    },
+    {
+      "id": "cn-limu-d2l",
+      "name": "李沐 · 动手学深度学习",
+      "url": "https://courses.d2l.ai/zh-v2/",
+      "description": "Amazon 资深首席科学家李沐主讲,中文 PyTorch 实现,教材免费在线阅读",
+      "category": "深度学习"
+    },
+    {
+      "id": "cn-limu-bilibili",
+      "name": "跟李沐学 AI · B 站频道",
+      "url": "https://space.bilibili.com/1567748478",
+      "description": "李沐持续更新的论文精读、深度学习、面试经验等系列视频",
+      "category": "深度学习"
+    },
+    {
+      "id": "cn-tsinghua-nlp",
+      "name": "清华 NLP · 刘知远",
+      "url": "https://www.bilibili.com/video/BV1Pe4y1B72v",
+      "description": "清华大学刘知远团队主讲的自然语言处理课程,从词向量到大模型",
+      "category": "自然语言处理"
+    },
+    {
+      "id": "cn-zju-ml-huhaoji",
+      "name": "浙大 · 胡浩基机器学习",
+      "url": "https://www.bilibili.com/video/BV1qf4y1x7kB",
+      "description": "浙江大学胡浩基副教授主讲,理论推导清晰,适合数学基础扎实的学习者",
+      "category": "机器学习"
+    },
+    {
+      "id": "cn-cs231n-zh",
+      "name": "斯坦福 CS231n",
+      "url": "https://www.bilibili.com/video/BV1nJ411z7fe",
+      "description": "李飞飞团队的计算机视觉名课,B 站中文翻译版",
+      "category": "计算机视觉"
+    },
+    {
+      "id": "cn-llm-tutorial",
+      "name": "LLM 大模型从入门到实战",
+      "url": "https://www.bilibili.com/video/BV1iz421h7Kv",
+      "description": "社区维护的大模型实战课,涵盖 RAG / 微调 / Agent / Prompt Engineering",
+      "category": "大模型"
+    },
+    {
+      "id": "cn-platform-atomgit",
+      "name": "AtomGit AI Hub · 学习中心",
+      "url": "https://ai.atomgit.com/learn",
+      "description": "GitCode 旗下 AI 学习平台,集中各类学习路径与实战教程",
+      "category": "学习平台"
+    },
+    {
+      "id": "cn-platform-aistudio",
+      "name": "飞桨 AI Studio",
+      "url": "https://aistudio.baidu.com/learn",
+      "description": "百度飞桨学习平台,大量免费公开课与可在线运行的实战项目,自带算力",
+      "category": "学习平台"
+    },
+    {
+      "id": "cn-platform-modelscope",
+      "name": "ModelScope · 魔搭学习",
+      "url": "https://www.modelscope.cn/learn",
+      "description": "阿里达摩院出品,模型 / 课程 / 数据集一体化的中文 AI 社区",
+      "category": "学习平台"
+    },
+    {
+      "id": "cn-platform-datawhale",
+      "name": "Datawhale 开源学习社区",
+      "url": "https://datawhale.cn/",
+      "description": "国内最活跃的 AI 开源学习社区,主打开源教程 / 组队学习 / 入门到进阶",
+      "category": "学习平台"
+    },
+    {
+      "id": "cn-platform-openbayes",
+      "name": "OpenBayes 公开教程",
+      "url": "https://openbayes.com/console/public/tutorials",
+      "description": "算力平台开放的公开 Notebook 教程,可一键运行",
+      "category": "学习平台"
+    },
+    {
+      "id": "cn-platform-geektime",
+      "name": "极客时间 · AI 专栏",
+      "url": "https://time.geekbang.org/category/intel-100",
+      "description": "AI / ML / 大模型方向收费专栏,内容深度与体系化程度高",
+      "category": "学习平台"
+    },
+    {
+      "id": "cn-platform-coursera-cn",
+      "name": "Coursera 中文站",
+      "url": "https://www.coursera.org/zh-CN",
+      "description": "国际公开课中文界面入口,大量斯坦福 / DeepLearning.AI 课程有中文字幕",
+      "category": "学习平台"
+    },
+    {
+      "id": "cn-platform-icourse163",
+      "name": "中国大学 MOOC",
+      "url": "https://www.icourse163.org/search.htm?search=人工智能",
+      "description": "清华 / 北大 / 浙大 / 中科大 / 复旦等顶尖高校 AI 公开课聚合入口",
+      "category": "学习平台"
+    },
+    {
+      "id": "cn-platform-xuetangx",
+      "name": "学堂在线",
+      "url": "https://www.xuetangx.com/search?query=人工智能",
+      "description": "清华出品 MOOC 平台,聚合国内顶尖高校 AI 课程",
+      "category": "学习平台"
+    }
+  ]
+}

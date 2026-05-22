@@ -28,6 +28,19 @@ const COURSES_MIRRORS: { name: string; base: string }[] = [
 
 const COURSES_FILE = 'README.md';
 
+// CN list lives at echobird.ai/courses/cn.json (CF Worker), with GitHub raw as backup.
+// Format: { courses: Omit<Course, 'lang'>[], categories: string[] }
+// Edit cn.json to add/remove entries without shipping a release.
+const COURSES_MIRRORS_CN: { name: string; base: string }[] = [
+  { name: 'echobird', base: 'https://echobird.ai/courses' },
+  {
+    name: 'github',
+    base: 'https://raw.githubusercontent.com/edison7009/EchoBird/main/docs/courses',
+  },
+];
+
+const COURSES_FILE_CN = 'cn.json';
+
 // ===== Types =====
 
 type Lang = 'zh' | 'en';
@@ -41,12 +54,17 @@ interface Course {
   lang: Lang;
 }
 
-// Persisted shape — only the upstream-fetched EN data. CN supplement is sourced
-// directly from CN_COURSES / CN_CATEGORIES at render time so editing the array
-// shows up immediately without waiting for cache expiry.
+// Persisted shapes — one per remote source. Bundled CN_COURSES / CN_CATEGORIES
+// arrays below are the offline floor used when both CN mirrors fail.
 interface CachedEn {
   enCourses: Course[];
   enCategories: string[];
+  fetchedAt: number;
+}
+
+interface CachedZh {
+  zhCourses: Course[];
+  zhCategories: string[];
   fetchedAt: number;
 }
 
@@ -57,13 +75,25 @@ interface Catalog {
   fetchedAt: number;
 }
 
-// ===== Curated CN supplement =====
+// ===== Bundled CN fallback =====
 //
-// dair-ai/ML-YouTube-Courses is 100% YouTube — blocked in mainland China. We bundle
-// a small list of well-known CN-accessible courses (Bilibili / 中国大学MOOC / 学堂在线)
-// as a permanent supplement. These are picks that don't churn (canonical re-uploads
-// of evergreen courses by famous teachers).
+// dair-ai/ML-YouTube-Courses is 100% YouTube — blocked in mainland China, so we
+// maintain our own CN list. The live source is echobird.ai/courses/cn.json,
+// manually edited for content updates without shipping a release.
+//
+// This array is the offline floor: shown on first launch before the remote fetch
+// completes, and as a fallback when all mirrors fail. Keep it in sync with
+// docs/courses/cn.json only when you want new entries baked into a release.
 const CN_COURSES: Course[] = [
+  {
+    id: 'cn-claude-founders-playbook',
+    name: 'Claude 教你用 AI 创业',
+    url: 'https://coffeecli.com/courses/founders-playbook',
+    description:
+      '面向独立开发者与创业者的 AI 实战课,讲解如何用 Claude 等大模型搭建产品并跑通商业闭环',
+    category: '大模型',
+    lang: 'zh',
+  },
   {
     id: 'cn-lihongyi-ml',
     name: '李宏毅 · 机器学习',
@@ -216,14 +246,15 @@ const CN_CATEGORIES = ['学习平台', '机器学习', '深度学习', '自然�
 
 // ===== Local cache =====
 
-// New cache key (`:en`) so any old persisted blob from prior schema versions
-// is naturally ignored — no migration code needed.
-const CACHE_KEY = 'courses:cache:en';
+// Versioned cache keys (`:en` / `:zh`) so any old persisted blob from prior schema
+// versions is naturally ignored — no migration code needed.
+const CACHE_KEY_EN = 'courses:cache:en';
+const CACHE_KEY_ZH = 'courses:cache:zh';
 const REFRESH_AFTER_MS = 6 * 3600 * 1000;
 
 const loadCachedEn = (): CachedEn | null => {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    const raw = localStorage.getItem(CACHE_KEY_EN);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed?.enCourses) || !Array.isArray(parsed?.enCategories)) return null;
@@ -234,18 +265,42 @@ const loadCachedEn = (): CachedEn | null => {
 };
 const saveCachedEn = (c: CachedEn) => {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(c));
+    localStorage.setItem(CACHE_KEY_EN, JSON.stringify(c));
   } catch {
     /* quota */
   }
 };
 
-// Build the runtime catalog by merging the fetched EN cache with the always-fresh CN supplement.
-const buildCatalog = (en: CachedEn | null): Catalog => ({
-  courses: [...(en?.enCourses || []), ...CN_COURSES],
-  categoriesByLang: { en: en?.enCategories || [], zh: CN_CATEGORIES },
-  fetchedAt: en?.fetchedAt || Date.now(),
-});
+const loadCachedZh = (): CachedZh | null => {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY_ZH);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed?.zhCourses) || !Array.isArray(parsed?.zhCategories)) return null;
+    return parsed as CachedZh;
+  } catch {
+    return null;
+  }
+};
+const saveCachedZh = (c: CachedZh) => {
+  try {
+    localStorage.setItem(CACHE_KEY_ZH, JSON.stringify(c));
+  } catch {
+    /* quota */
+  }
+};
+
+// Build the runtime catalog: EN from remote (no local fallback), CN from remote
+// with bundled CN_COURSES / CN_CATEGORIES as the floor.
+const buildCatalog = (en: CachedEn | null, zh: CachedZh | null): Catalog => {
+  const zhCourses = zh?.zhCourses?.length ? zh.zhCourses : CN_COURSES;
+  const zhCategories = zh?.zhCategories?.length ? zh.zhCategories : CN_CATEGORIES;
+  return {
+    courses: [...(en?.enCourses || []), ...zhCourses],
+    categoriesByLang: { en: en?.enCategories || [], zh: zhCategories },
+    fetchedAt: Math.max(en?.fetchedAt ?? 0, zh?.fetchedAt ?? 0) || Date.now(),
+  };
+};
 
 // ===== Network: mirror-aware fetch =====
 
@@ -282,6 +337,39 @@ async function fetchReadme(): Promise<string> {
     }
   }
   throw lastErr || new Error('all mirrors failed');
+}
+
+// CN list: try each mirror in fixed order (echobird → github raw). No preferredMirror
+// optimization — VPN switches change which one works, so don't cache the choice.
+async function fetchCnJson(): Promise<{ courses: Course[]; categories: string[] }> {
+  let lastErr: unknown = null;
+  for (const mirror of COURSES_MIRRORS_CN) {
+    try {
+      const res = await fetch(`${mirror.base}/${COURSES_FILE_CN}`, { cache: 'no-cache' });
+      if (!res.ok) {
+        lastErr = new Error(`${mirror.name} ${res.status}`);
+        continue;
+      }
+      const text = await res.text();
+      if (looksLikeHtml(text)) {
+        lastErr = new Error(`${mirror.name} returned HTML`);
+        continue;
+      }
+      const json = JSON.parse(text);
+      if (!Array.isArray(json?.courses) || !Array.isArray(json?.categories)) {
+        lastErr = new Error(`${mirror.name} invalid shape`);
+        continue;
+      }
+      const courses: Course[] = json.courses.map((c: Omit<Course, 'lang'>) => ({
+        ...c,
+        lang: 'zh' as const,
+      }));
+      return { courses, categories: json.categories as string[] };
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('all CN mirrors failed');
 }
 
 // ===== Markdown parser =====
@@ -423,52 +511,98 @@ function useAiCourses() {
 // ===== Provider =====
 
 export function AiCoursesProvider({ children }: { children: React.ReactNode }) {
-  // Hydrate the EN cache once on mount so re-renders don't re-read localStorage.
+  // Hydrate caches once on mount so re-renders don't re-read localStorage.
   const initialCachedEn = useMemo(() => loadCachedEn(), []);
+  const initialCachedZh = useMemo(() => loadCachedZh(), []);
   const [cachedEn, setCachedEn] = useState<CachedEn | null>(initialCachedEn);
-  const [initialLoading, setInitialLoading] = useState(initialCachedEn === null);
+  const [cachedZh, setCachedZh] = useState<CachedZh | null>(initialCachedZh);
+  // Skeleton only when BOTH caches are cold — bundled CN_COURSES still renders
+  // for zh-Hans users even when nothing is cached, so the skeleton gate is
+  // really "anything to show at all".
+  const [initialLoading, setInitialLoading] = useState(
+    initialCachedEn === null && initialCachedZh === null
+  );
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const seq = useRef(0);
-  const cacheRef = useRef(cachedEn);
+  const cacheRefEn = useRef(cachedEn);
+  const cacheRefZh = useRef(cachedZh);
   useEffect(() => {
-    cacheRef.current = cachedEn;
+    cacheRefEn.current = cachedEn;
   }, [cachedEn]);
+  useEffect(() => {
+    cacheRefZh.current = cachedZh;
+  }, [cachedZh]);
 
-  // Catalog is computed: EN cache + CN supplement. Recomputes when cache changes,
-  // so editing CN_COURSES in source ALWAYS reflects on next mount.
-  const catalog = useMemo(() => buildCatalog(cachedEn), [cachedEn]);
+  // Catalog merges both caches; CN_COURSES is the floor when remote CN is unavailable.
+  const catalog = useMemo(() => buildCatalog(cachedEn, cachedZh), [cachedEn, cachedZh]);
 
   const sync = useCallback(async (force = false) => {
-    const cur = cacheRef.current;
-    if (!force && cur && Date.now() - cur.fetchedAt < REFRESH_AFTER_MS) {
+    const curEn = cacheRefEn.current;
+    const curZh = cacheRefZh.current;
+    const enFresh = !force && curEn && Date.now() - curEn.fetchedAt < REFRESH_AFTER_MS;
+    const zhFresh = !force && curZh && Date.now() - curZh.fetchedAt < REFRESH_AFTER_MS;
+
+    if (enFresh && zhFresh) {
       setInitialLoading(false);
       return;
     }
+
     const my = ++seq.current;
     setSyncing(true);
     setError(null);
-    try {
-      const md = await fetchReadme();
-      if (my !== seq.current) return;
-      const parsed = parseDairAi(md);
-      const fresh: CachedEn = {
-        enCourses: parsed.courses,
-        enCategories: parsed.categories,
-        fetchedAt: Date.now(),
-      };
-      saveCachedEn(fresh);
-      setCachedEn(fresh);
-    } catch (e: any) {
-      if (my !== seq.current) return;
-      // Network down — buildCatalog still surfaces the CN supplement, so users see something.
-      setError(e?.message || 'Network error');
-    } finally {
-      if (my === seq.current) {
-        setInitialLoading(false);
-        setSyncing(false);
-      }
+
+    let latestError: string | null = null;
+    const tasks: Promise<void>[] = [];
+
+    if (!enFresh) {
+      tasks.push(
+        fetchReadme()
+          .then((md) => {
+            if (my !== seq.current) return;
+            const parsed = parseDairAi(md);
+            const fresh: CachedEn = {
+              enCourses: parsed.courses,
+              enCategories: parsed.categories,
+              fetchedAt: Date.now(),
+            };
+            saveCachedEn(fresh);
+            setCachedEn(fresh);
+          })
+          .catch((e: unknown) => {
+            latestError = e instanceof Error ? e.message : 'EN fetch failed';
+          })
+      );
+    }
+
+    if (!zhFresh) {
+      tasks.push(
+        fetchCnJson()
+          .then(({ courses, categories }) => {
+            if (my !== seq.current) return;
+            const fresh: CachedZh = {
+              zhCourses: courses,
+              zhCategories: categories,
+              fetchedAt: Date.now(),
+            };
+            saveCachedZh(fresh);
+            setCachedZh(fresh);
+          })
+          .catch((e: unknown) => {
+            latestError = e instanceof Error ? e.message : 'CN fetch failed';
+          })
+      );
+    }
+
+    await Promise.allSettled(tasks);
+
+    if (my === seq.current) {
+      // Error UI only surfaces when visible.length === 0 anyway — CN fallback
+      // ensures zh-Hans users never see it.
+      if (latestError) setError(latestError);
+      setInitialLoading(false);
+      setSyncing(false);
     }
   }, []);
 
