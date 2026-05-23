@@ -1,5 +1,5 @@
 {
-  "version": "4.9.3",
-  "releaseDate": "2026-05-22",
+  "version": "4.9.4",
+  "releaseDate": "2026-05-23",
   "releaseNotes": "## 中文\n\n**本次更新**\n- 调整 AI 公开课内容,以普通用户课程为主,例如:Claude 快速上手、Claude 教你用 AI 创业 等\n- 支持用户自己 Vibe Coding 的应用或游戏切换模型 — 新页面「我的AI项目」一键管理\n- 在 Codex 测试模型能力,输入信息:派出 3 个子 Agent 帮我搜索「生成论文」的工具,见 [#150](https://github.com/edison7009/EchoBird/issues/150)\n- 在 Codex 切换第三方模型时插件入口可以正常显示\n- Codex 官方账号与第三方模型丝滑切换,两端聊天记录独立保留\n\n## English\n\n**What's new**\n- AI Courses retooled for everyday users — e.g. Claude Code Quickstart, Founders Playbook with Claude\n- EchoBird now supports model switching for your own vibe-coded apps and games — manage them in the new \"My AI Projects\" page\n- Test model capability in Codex by asking it to spawn 3 sub-agents to search for \"paper-writing\" tools — see [#150](https://github.com/edison7009/EchoBird/issues/150)\n- Codex plugin sidebar entry now visible when using third-party models\n- Codex: smooth switching between official account and third-party models, each side keeps its own chat history\n\n## 日本語\n\n**今回のアップデート**\n- AI 公開講座の内容を一般ユーザー向けに刷新 — 「Claude クイックスタート」「Claude で AI 起業」など実践寄りのコースを中心に\n- ユーザー自身が Vibe Coding したアプリ / ゲームのモデル切り替えに対応 — 新ページ「マイ AI プロジェクト」で一括管理\n- Codex でモデル能力テスト:「論文生成」ツール検索のため 3 つのサブエージェントを派遣してと指示 — [#150](https://github.com/edison7009/EchoBird/issues/150) 参照\n- Codex でサードパーティモデルに切り替えた際、プラグインのサイドバー入口が正常表示\n- Codex 公式アカウントとサードパーティモデルをスムーズに切り替え、双方のチャット履歴を独立保持"
 }
