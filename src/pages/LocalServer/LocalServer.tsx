@@ -701,23 +701,6 @@ export const LocalServerMain: React.FC = () => {
                 </div>
                 <div className="w-full max-w-3xl px-4">
                   <div className="rounded-lg border border-cyber-border/60 bg-cyber-bg-secondary/40 p-5 shadow-sm">
-                    {/* CUDA helpers — Windows only (macOS has no CUDA; Linux users handle their own toolkit) */}
-                    {isWindows && (
-                      <div className="flex flex-wrap gap-2 justify-center pb-4 mb-5 border-b border-cyber-border/40">
-                        <button
-                          onClick={() => goToMother(t('mother.hintDetectCuda'))}
-                          className="px-3 py-1.5 text-xs rounded-full bg-cyber-surface border border-cyber-border text-cyber-text-secondary hover:bg-cyber-elevated hover:text-cyber-text hover:border-cyber-text-muted/50 transition-colors cursor-pointer"
-                        >
-                          {t('mother.hintDetectCuda')}
-                        </button>
-                        <button
-                          onClick={() => goToMother(t('mother.hintInstallCuda'))}
-                          className="px-3 py-1.5 text-xs rounded-full bg-cyber-surface border border-cyber-border text-cyber-text-secondary hover:bg-cyber-elevated hover:text-cyber-text hover:border-cyber-text-muted/50 transition-colors cursor-pointer"
-                        >
-                          {t('mother.hintInstallCuda')}
-                        </button>
-                      </div>
-                    )}
                     <table className="w-full text-sm border-collapse font-sans">
                       <thead>
                         <tr className="text-cyber-text-secondary">
@@ -764,6 +747,23 @@ export const LocalServerMain: React.FC = () => {
                       </tbody>
                     </table>
                   </div>
+                  {/* CUDA helpers — Windows only (macOS has no CUDA; Linux users handle their own toolkit) */}
+                  {isWindows && (
+                    <div className="flex justify-center gap-3 mt-4">
+                      <button
+                        onClick={() => goToMother(t('mother.hintDetectCuda'))}
+                        className="py-1.5 px-5 text-xs font-bold rounded bg-cyber-elevated text-cyber-text hover:bg-cyber-elevated/80 transition-all"
+                      >
+                        {t('mother.hintDetectCuda')}
+                      </button>
+                      <button
+                        onClick={() => goToMother(t('mother.hintInstallCuda'))}
+                        className="py-1.5 px-5 text-xs font-bold rounded bg-cyber-elevated text-cyber-text hover:bg-cyber-elevated/80 transition-all"
+                      >
+                        {t('mother.hintInstallCuda')}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
