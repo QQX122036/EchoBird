@@ -128,11 +128,11 @@ const zhHant: Partial<Translations> = {
   'server.tier.entry': '入門',
   'server.tier.recommended': '推薦',
   'server.tier.flagship': '旗艦',
-  'server.tier.minSpec': 'CUDA 模組需與引擎版本一致 「建議先安裝 CUDA 模組,再安裝引擎」',
+  'server.tier.minSpec': 'CUDA 模組與引擎大版本號需一致 「建議先安裝 CUDA 模組,再安裝引擎」',
   'server.tier.minSpecAuto': 'macOS / Linux 系統自動管理 CUDA,直接安裝引擎即可',
   'server.enginePicker.title': '選擇引擎版本',
   'server.enginePicker.hint':
-    '點擊任一行立即開始安裝。CUDA 版本需與你已裝的 CUDA 模組一致才能用 GPU。',
+    '點擊任一行立即開始安裝。引擎的 CUDA 大版本(12.x / 13.x)需與你已裝的 CUDA 模組一致才能用 GPU。',
   'server.enginePicker.latest': '最新',
   'server.local': '本地',
   'server.store': '商店',

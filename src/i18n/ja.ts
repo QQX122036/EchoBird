@@ -134,11 +134,11 @@ const ja: Partial<Translations> = {
   'server.tier.recommended': '推奨',
   'server.tier.flagship': 'フラッグシップ',
   'server.tier.minSpec':
-    'CUDA モジュールはエンジンのビルドと一致させる必要があります — 先にモジュールを、次にエンジンを',
+    'CUDA モジュールとエンジンはメジャーバージョンを揃える必要があります — 先にモジュールを、次にエンジンを',
   'server.tier.minSpecAuto': 'macOS / Linux は CUDA を自動管理 — エンジンをインストールするだけ',
   'server.enginePicker.title': 'エンジンバージョンを選択',
   'server.enginePicker.hint':
-    '行をクリックするとインストールが開始されます。GPU モードを使うには CUDA バージョンが既存の CUDA モジュールと一致する必要があります。',
+    '行をクリックするとインストールが開始されます。GPU モードを使うには、エンジンの CUDA メジャーバージョン(12.x / 13.x)が既存の CUDA モジュールと一致する必要があります。',
   'server.enginePicker.latest': '最新',
   'server.local': 'ローカル',
   'server.store': 'ストア',
