@@ -84,8 +84,10 @@ export async function getStoreModels(): Promise<StoreModel[]> {
   return invoke('get_store_models');
 }
 
-export async function downloadModel(repo: string, fileName: string): Promise<string> {
-  return invoke('download_model', { repo, fileName });
+/** Trigger a GGUF model download. Pass a single-element array for single-file
+ *  models, multiple elements (in shard order) for sharded multi-file GGUFs. */
+export async function downloadModel(repo: string, files: string[]): Promise<string> {
+  return invoke('download_model', { repo, files });
 }
 
 export interface LocalEngineEntry {
@@ -153,13 +155,18 @@ export async function pauseDownload(): Promise<void> {
   return invoke('pause_download');
 }
 
-export async function cancelDownload(fileName?: string): Promise<void> {
-  return invoke('cancel_download', { fileName: fileName || null });
+/** Cancel the in-progress download. Pass the variant's `files` array when
+ *  cancelling from a paused state (DOWNLOAD_FILE was already cleared); leave
+ *  empty to wipe whatever the backend currently has in flight. */
+export async function cancelDownload(files?: string[]): Promise<void> {
+  return invoke('cancel_download', { files: files && files.length ? files : null });
 }
 
 // Download progress event listener
 
 export interface DownloadProgressEvent {
+  /** Primary key — for multi-shard downloads stays pinned to the first shard
+   *  so the download UI's Map<fileName, …> keeps working across the job. */
   fileName: string;
   progress: number;
   downloaded: number;
@@ -172,6 +179,10 @@ export interface DownloadProgressEvent {
     | 'paused'
     | 'speed_test'
     | 'installing';
+  /** 1-based shard counter for multi-shard GGUF downloads. Absent for single-file. */
+  shardIndex?: number;
+  /** Total number of shards in the variant. Absent for single-file. */
+  shardCount?: number;
 }
 
 export function onDownloadProgress(

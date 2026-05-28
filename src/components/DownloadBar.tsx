@@ -42,7 +42,8 @@ const DownloadItemRow: React.FC<{
   item: DownloadItem;
   onPause?: () => void;
   onResume?: () => void;
-  onCancel?: (fileName?: string) => void;
+  /** Caller owns shard-list lookup — the row only signals intent. */
+  onCancel?: () => void;
 }> = ({ item, onPause, onResume, onCancel }) => {
   const { t } = useI18n();
   const isInstalling = item.status === 'installing';
@@ -82,6 +83,13 @@ const DownloadItemRow: React.FC<{
       >
         {shortenFileName(getDisplayName(item.fileName))}
       </span>
+
+      {/* Shard counter (multi-shard GGUF only) */}
+      {item.shardCount && item.shardCount > 1 && (
+        <span className="text-[10px] font-mono text-cyber-text-secondary/70 flex-shrink-0">
+          shard {item.shardIndex ?? '?'}/{item.shardCount}
+        </span>
+      )}
 
       {/* Progress bar (shown when downloading / installing / paused) */}
       {(isActive || isPaused) && (
@@ -161,7 +169,7 @@ const DownloadItemRow: React.FC<{
           {/* Downloading or paused: Cancel button */}
           {(isActive || isPaused) && onCancel && (
             <button
-              onClick={() => onCancel(item.fileName)}
+              onClick={onCancel}
               className="text-cyber-text-secondary/50 hover:text-red-400 transition-colors"
             >
               <X className="w-3.5 h-3.5" />
@@ -201,17 +209,23 @@ export const DownloadBar: React.FC = () => {
     (i) => i.status === 'downloading' || i.status === 'speed_test' || i.status === 'installing'
   ).length;
 
-  // Resume download (use stored repo + fileName to re-call startDownload)
+  // Resume download (use stored repo + shard list to re-call startDownload).
+  // Fall back to a single-element array if files wasn't captured (legacy paused
+  // entries from a prior dev session) — single-file resume still works.
   const handleResume = () => {
     if (primary?.repo) {
-      startDownload(primary.repo, primary.fileName);
+      const files = primary.files && primary.files.length ? primary.files : [primary.fileName];
+      startDownload(primary.repo, files);
     }
+  };
+  const handleCancel = () => {
+    cancelDownload(primary?.files);
   };
 
   return (
     <div
       className="
-            h-7 flex items-center px-4 
+            h-7 flex items-center px-4
             bg-cyber-bg/80 backdrop-blur-sm
             border-t border-cyber-border/30
             transition-all duration-300
@@ -223,7 +237,7 @@ export const DownloadBar: React.FC = () => {
           item={primary}
           onPause={pauseDownload}
           onResume={handleResume}
-          onCancel={cancelDownload}
+          onCancel={handleCancel}
         />
       </div>
 

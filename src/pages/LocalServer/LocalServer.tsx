@@ -1126,8 +1126,17 @@ export const LocalServerPanel: React.FC = () => {
     return modelRuntimes.includes(runtime);
   });
 
-  // Check if a file exists locally
-  const isDownloaded = (fileName: string) => ggufFiles.some((f) => f.fileName === fileName);
+  // Strip any HF subdir prefix from a catalog filename (sharded unsloth GGUFs
+  // are listed as "UD-Q4_K_XL/foo-00001-of-00010.gguf" but stored flat).
+  const basename = (path: string) => {
+    const i = path.lastIndexOf('/');
+    return i === -1 ? path : path.slice(i + 1);
+  };
+
+  // Check if every file in a variant exists locally. Single-file variants pass
+  // a one-element array; multi-shard variants pass the full shard list.
+  const isDownloaded = (files: string[]) =>
+    files.length > 0 && files.every((path) => ggufFiles.some((f) => f.fileName === basename(path)));
 
   // ─── Handlers ───
 
@@ -1470,7 +1479,7 @@ export const LocalServerPanel: React.FC = () => {
                 )}
                 {filteredStoreModels.map((model) => {
                   const isExpanded = expandedModelId === model.id;
-                  const hasDownloaded = model.variants.some((v) => isDownloaded(v.fileName));
+                  const hasDownloaded = model.variants.some((v) => isDownloaded(v.files));
 
                   return (
                     <div
@@ -1518,8 +1527,11 @@ export const LocalServerPanel: React.FC = () => {
                       {isExpanded && (
                         <div className="mt-3 pt-3 border-t border-cyber-border/30 space-y-1">
                           {model.variants.map((variant) => {
-                            const variantDownloaded = isDownloaded(variant.fileName);
-                            const dlItem = downloads.get(variant.fileName);
+                            const variantDownloaded = isDownloaded(variant.files);
+                            // Progress map is keyed by the first shard's basename — backend
+                            // emits that as DownloadProgressEvent.fileName.
+                            const primaryKey = basename(variant.files[0] ?? '');
+                            const dlItem = downloads.get(primaryKey);
                             const isActiveDownload =
                               dlItem?.status === 'downloading' || dlItem?.status === 'speed_test';
                             const isPaused = dlItem?.status === 'paused';
@@ -1563,7 +1575,7 @@ export const LocalServerPanel: React.FC = () => {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          startDownload(model.huggingfaceRepo, variant.fileName);
+                                          startDownload(model.huggingfaceRepo, variant.files);
                                         }}
                                         className={`${dlItem?.status === 'error' ? 'text-red-400 hover:text-red-300' : 'text-cyber-text-secondary hover:text-cyber-text'} transition-colors`}
                                       >

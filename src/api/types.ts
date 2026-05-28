@@ -136,7 +136,12 @@ export interface AppSettings {
 
 export interface StoreModelVariant {
   quantization: string;
-  fileName: string;
+  /** All GGUF files for this variant. Single-file variants list one entry;
+   *  sharded multi-file GGUFs (e.g. unsloth `UD-Q4_K_XL/foo-00001-of-00010.gguf`
+   *  … `…-00010-of-00010.gguf`) list every shard in order. The first entry's
+   *  basename is the variant's primary key in the download progress map. */
+  files: string[];
+  /** Total bytes across all files in this variant. */
   fileSize: number;
   recommendedVRAM: string;
 }

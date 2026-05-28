@@ -7,6 +7,10 @@ import * as api from '../api/tauri';
 export interface DownloadItem {
   fileName: string;
   repo?: string; // Repository name, used for resuming after pause
+  /** Full file list for the variant (single-element for single-file GGUFs;
+   *  all shards in order for sharded GGUFs). Kept so resume-after-pause and
+   *  cancel-after-pause can hand the backend the right names. */
+  files?: string[];
   progress: number;
   downloaded: number;
   total: number;
@@ -18,6 +22,10 @@ export interface DownloadItem {
     | 'paused'
     | 'speed_test'
     | 'installing';
+  /** 1-based shard counter (multi-shard only). */
+  shardIndex?: number;
+  /** Total shards in the variant (multi-shard only). */
+  shardCount?: number;
 }
 
 interface DownloadContextValue {
@@ -27,12 +35,16 @@ interface DownloadContextValue {
   isDownloading: boolean;
   // The currently active download (the first 'downloading' status)
   activeDownload: DownloadItem | null;
-  // Trigger download (also used for resuming after pause)
-  startDownload: (repo: string, fileName: string) => void;
+  // Trigger download (also used for resuming after pause). Pass the variant's
+  // full `files` array — single-element for single-file GGUFs, multi-element
+  // for sharded GGUFs. The first entry becomes the progress map's primary key.
+  startDownload: (repo: string, files: string[]) => void;
   // Pause download (saves progress, resumable)
   pauseDownload: () => void;
-  // Cancel download (deletes temp file, supports cancelling after pause, accepts fileName for pause-based cancel)
-  cancelDownload: (fileName?: string) => void;
+  // Cancel download. Pass the variant's `files` so cancel-after-pause can
+  // wipe every shard's temp file; omit to wipe whatever the backend is
+  // currently tracking.
+  cancelDownload: (files?: string[]) => void;
 }
 
 const DownloadContext = createContext<DownloadContextValue | null>(null);
@@ -59,10 +71,13 @@ export const DownloadProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           next.set(data.fileName, {
             fileName: data.fileName,
             repo: existing?.repo, // Keep existing repo info
+            files: existing?.files, // Preserve shard list set at startDownload
             progress: data.progress,
             downloaded: data.downloaded,
             total: data.total,
             status: data.status as DownloadItem['status'],
+            shardIndex: data.shardIndex,
+            shardCount: data.shardCount,
           });
           return next;
         });
@@ -96,23 +111,30 @@ export const DownloadProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, []);
 
-  // Trigger download (also used for resuming after pause)
-  const startDownload = useCallback(async (repo: string, fileName: string) => {
+  // Trigger download (also used for resuming after pause). The first entry in
+  // `files` is the variant's primary key — it must match what the backend
+  // emits in DownloadProgressEvent.fileName so Map<fileName, …> lookups line up.
+  const startDownload = useCallback(async (repo: string, files: string[]) => {
+    if (!files.length) return;
+    const primary = files[0];
     // Immediately show downloading state
     setDownloads((prev) => {
       const next = new Map(prev);
-      next.set(fileName, {
-        fileName,
+      next.set(primary, {
+        fileName: primary,
         repo, // Store repo for resume after pause
+        files, // Store full shard list for cancel-after-pause
         progress: 0,
         downloaded: 0,
         total: 0,
         status: 'downloading',
+        shardCount: files.length > 1 ? files.length : undefined,
+        shardIndex: files.length > 1 ? 1 : undefined,
       });
       return next;
     });
     try {
-      await api.downloadModel(repo, fileName);
+      await api.downloadModel(repo, files);
     } catch (e) {
       console.error('[DownloadContext] Download failed:', e);
     }
@@ -127,10 +149,11 @@ export const DownloadProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, []);
 
-  // Cancel download (deletes .downloading temp file, supports cancel after pause)
-  const cancelDownload = useCallback(async (fileName?: string) => {
+  // Cancel download (deletes .downloading temp files; for multi-shard pass
+  // all shard names so cancel-after-pause cleans every leftover)
+  const cancelDownload = useCallback(async (files?: string[]) => {
     try {
-      await api.cancelDownload(fileName);
+      await api.cancelDownload(files);
     } catch (e) {
       console.error('[DownloadContext] Cancel failed:', e);
     }
