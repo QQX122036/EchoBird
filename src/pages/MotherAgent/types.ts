@@ -19,6 +19,13 @@ export type ChatMessage =
 
 export const MA_PAGE_SIZE = 30;
 
+// A Mother Agent quick-phrase hint. `action` maps to the i18n label key
+// `mother.hint<Action>`; for install hints `{agent}` is substituted in.
+export interface MotherHint {
+  action: string;
+  agent?: string;
+}
+
 // ===== Context Type =====
 
 export interface MotherAgentCtx {

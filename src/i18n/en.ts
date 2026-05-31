@@ -221,8 +221,9 @@ const en: Translations = {
   'mother.selectModel': 'Select model',
   'mother.hintInstall': 'Install {agent}',
   'mother.enterMessage': 'Enter message...',
-  'mother.servers': 'SERVERS',
-  'mother.sshGuide': 'Setup Guide',
+  'mother.servers': 'Servers',
+  'mother.sshGuide': 'Guide',
+  'mother.quickCommands': 'Commands',
   'mother.local': 'LOCAL',
   'mother.addServer': 'ADD SERVER',
   'mother.hostIp': 'Host / IP',
@@ -276,14 +277,19 @@ const en: Translations = {
   'error.requestFailed': 'Request failed, please try again.',
   'error.userCancelled': 'Cancelled.',
   'app.name': 'EchoBird',
-  'mother.hintShowSpecs': 'Show server specs (OS, CPU, memory, disk)',
-  'mother.hintShowSpecsLocal': 'Show local machine specs (OS, CPU, memory, disk)',
+  'mother.hintShowSpecs': 'Show server specs',
+  'mother.hintShowSpecsLocal': 'Show local machine specs',
   'mother.hintTroubleshoot': '{agent} is not working, help me fix it',
   'mother.hintUninstall': 'Completely uninstall {agent}',
   'mother.hintNetworkInfo': 'Show internal/public IP',
   'mother.hintSecurityAudit': 'Detect suspicious activity',
   'mother.hintDetectCuda': 'Detect CUDA module status',
   'mother.hintInstallCuda': 'Help me install CUDA modules',
+  'mother.hintSetCodexLocale': 'Set Codex Desktop to English',
+  // Intentionally empty: the Claude Chinese-patch chip is shown only for
+  // zh-Hans / zh-Hant. An empty label makes translate() fall through to the
+  // raw key, which the hint renderer treats as "no translation → hide".
+  'mother.hintSetClaudeLocale': '',
   'mother.parasiteTipInstalled':
     "I'm an AI assistant — short memory, sharp install skills, here to launch you into AI. Once your Claude Code is configured with a model, pick it on the right to keep talking here.",
   'mother.parasiteTipNotInstalled':

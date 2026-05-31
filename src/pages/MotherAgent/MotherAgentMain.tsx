@@ -65,7 +65,6 @@ export function MotherAgentMain() {
   }, [clearChat]);
 
   const [_publicIP, setPublicIP] = useState('...');
-  const [remoteHints, setRemoteHints] = useState<Array<{ action: string; agent?: string }>>([]);
   const [_serverModel, setServerModel] = useState<string | null>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null!);
   const _fileInputRef = useRef<HTMLInputElement>(null!);
@@ -123,18 +122,6 @@ export function MotherAgentMain() {
       .then((r) => r.text())
       .then((ip) => setPublicIP(ip))
       .catch(() => setPublicIP('offline'));
-    // Load quick-hint buttons from bundled assets (offline-first).
-    api
-      .getMotherHints()
-      .then((s) => {
-        try {
-          const data = JSON.parse(s);
-          setRemoteHints(data.hints || []);
-        } catch {
-          setRemoteHints([]);
-        }
-      })
-      .catch(() => setRemoteHints([]));
   }, []);
 
   // Poll Local Server status
@@ -279,50 +266,6 @@ export function MotherAgentMain() {
           onScroll={handleScroll}
           className="absolute inset-0 overflow-y-auto slim-scroll p-4"
         >
-          {/* Quick prompt hints — scrolls with content */}
-          <div className="mb-2 select-none">
-            {remoteHints.length > 0 && (
-              <div className="flex flex-wrap gap-2 py-2">
-                {remoteHints.map((hint, i) => {
-                  // showSpecs swaps to a local-machine wording when 127.0.0.1
-                  // is selected — otherwise the agent often refuses, treating
-                  // "server" prompts as a remote/privileged operation.
-                  const isLocalShowSpecs =
-                    hint.action === 'showSpecs' && selectedServerId === 'local';
-                  const i18nKey = (
-                    isLocalShowSpecs
-                      ? 'mother.hintShowSpecsLocal'
-                      : `mother.hint${hint.action[0].toUpperCase()}${hint.action.slice(1)}`
-                  ) as any;
-                  const label = t(i18nKey).replace('{agent}', hint.agent || '');
-                  // Skip hints whose i18n key was removed (label equals raw key)
-                  if (label === i18nKey) return null;
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        // Replace input contents — don't append. Each hint
-                        // is a self-contained prompt; concatenating them
-                        // produces nonsense for the agent.
-                        setChatInput(label);
-                        const el = chatInputRef.current;
-                        if (el) {
-                          el.focus();
-                          requestAnimationFrame(() => {
-                            el.selectionStart = el.selectionEnd = label.length;
-                          });
-                        }
-                      }}
-                      className="px-3 py-1.5 text-xs rounded-full bg-cyber-surface border border-cyber-border text-cyber-text-secondary hover:bg-cyber-elevated hover:text-cyber-text hover:border-cyber-text-muted/50 transition-colors cursor-pointer"
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
           {/* Chat messages — markdown stream */}
           <div className="pt-2 pb-2">
             {/* Skeleton placeholders — shown briefly when lazy-loading older messages */}
