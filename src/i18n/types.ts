@@ -143,6 +143,8 @@ export type TKey =
   | 'agent.restore'
   | 'agent.codexRelayLabel'
   | 'agent.codexRelayHint'
+  | 'agent.codexResponsesLabel'
+  | 'agent.codexResponsesHint'
   // Tool categories
   | 'toolCat.all'
   | 'toolCat.agents'

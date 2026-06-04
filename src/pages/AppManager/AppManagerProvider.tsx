@@ -133,6 +133,17 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
   const [claudeDesktopRelayMode, setClaudeDesktopRelayModeRaw] = useState<boolean>(() =>
     readBool('echobird_claudedesktop_relay_mode', false)
   );
+  // Codex-only "Responses passthrough" toggle. Mutually exclusive with
+  // codexRelayMode — the App Manager enforces at-most-one-on via auto-flip
+  // in the setters; both-off is the default (legacy Bridge translation).
+  // When ON, config.toml still points at the 127.0.0.1 proxy (so model-id
+  // rewrite keeps happening), but the proxy forwards to the upstream's
+  // native /responses endpoint verbatim instead of translating down to
+  // Chat. For third-party models that natively speak Responses. Shared
+  // across Codex CLI + Codex Desktop, same as codexRelayMode.
+  const [codexResponsesPassthrough, setCodexResponsesPassthroughRaw] = useState<boolean>(() =>
+    readBool('echobird_codex_responses_passthrough', false)
+  );
 
   // Tool model config (single selection - one model per tool)
   const [toolModelConfig, setToolModelConfig] = useState<Record<string, string | null>>({
@@ -165,7 +176,8 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
   const applyModelConfig = async (
     toolId: string,
     internalId: string,
-    relayOverride?: boolean
+    relayOverride?: boolean,
+    passthroughOverride?: boolean
   ): Promise<true | string | false> => {
     const model = userModels.find((m) => m.internalId === internalId);
     if (!model) {
@@ -198,6 +210,11 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
     const isRelayCapableApp = isCodexApp || isClaudeDesktopApp;
     const currentRelayMode = isClaudeDesktopApp ? claudeDesktopRelayMode : codexRelayMode;
     const effectiveRelay = relayOverride ?? currentRelayMode;
+    // Responses passthrough is Codex-only and mutually exclusive with relay
+    // mode. The `!effectiveRelay` guard makes the two impossible to send to
+    // the backend as both-true even if a caller passes an inconsistent pair.
+    const effectivePassthrough =
+      isCodexApp && !effectiveRelay && (passthroughOverride ?? codexResponsesPassthrough);
 
     try {
       const result = await api.applyModelToTool(toolId, {
@@ -208,6 +225,7 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
         model: model.modelId || '',
         protocol: selectedProtocol,
         ...(isRelayCapableApp ? { relayMode: effectiveRelay } : {}),
+        ...(isCodexApp ? { responsesPassthrough: effectivePassthrough } : {}),
       });
 
       if (result?.success) {
@@ -237,20 +255,60 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
     (v: boolean) => {
       setCodexRelayModeRaw(v);
       writeBool('echobird_codex_relay_mode', v);
+      // Mutual exclusion: turning API Router ON forces Responses
+      // passthrough OFF (both-on is meaningless — relay bypasses the very
+      // proxy that passthrough operates on). Both-off stays allowed.
+      if (v) {
+        setCodexResponsesPassthroughRaw(false);
+        writeBool('echobird_codex_responses_passthrough', false);
+      }
       const codexToolId = (['codex', 'codexdesktop'] as const).find((id) => !!toolModelConfig[id]);
       if (!codexToolId) return;
       const pendingInternalId = toolModelConfig[codexToolId];
       if (!pendingInternalId || isOfficialModelSentinel(pendingInternalId)) return;
-      void applyModelConfig(codexToolId, pendingInternalId, v).then((result) => {
-        if (result !== true) {
-          setApplyError(typeof result === 'string' ? result : t('key.destroyed'));
+      // passthroughOverride=false when we just auto-flipped it off, so the
+      // re-apply doesn't read a stale (pre-flip) captured passthrough value.
+      void applyModelConfig(codexToolId, pendingInternalId, v, v ? false : undefined).then(
+        (result) => {
+          if (result !== true) {
+            setApplyError(typeof result === 'string' ? result : t('key.destroyed'));
+          }
         }
-      });
+      );
     },
     // Re-bind whenever the currently-selected model can change.
     // applyModelConfig itself is recreated on every render, so we
     // exclude it from deps to avoid an effect storm — the closure
     // captures the latest values either way via the relayOverride arg.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [toolModelConfig, t]
+  );
+
+  // Responses-passthrough setter — mirrors setCodexRelayMode (shared across
+  // Codex CLI + Desktop, re-applies on flip so the effect is immediate).
+  // Mutually exclusive with relay mode: turning this ON forces API Router OFF.
+  const setCodexResponsesPassthrough = useCallback(
+    (v: boolean) => {
+      setCodexResponsesPassthroughRaw(v);
+      writeBool('echobird_codex_responses_passthrough', v);
+      if (v) {
+        setCodexRelayModeRaw(false);
+        writeBool('echobird_codex_relay_mode', false);
+      }
+      const codexToolId = (['codex', 'codexdesktop'] as const).find((id) => !!toolModelConfig[id]);
+      if (!codexToolId) return;
+      const pendingInternalId = toolModelConfig[codexToolId];
+      if (!pendingInternalId || isOfficialModelSentinel(pendingInternalId)) return;
+      // relayOverride=false when passthrough goes ON (we auto-flipped relay
+      // off above), so the re-apply doesn't read a stale captured relay value.
+      void applyModelConfig(codexToolId, pendingInternalId, v ? false : undefined, v).then(
+        (result) => {
+          if (result !== true) {
+            setApplyError(typeof result === 'string' ? result : t('key.destroyed'));
+          }
+        }
+      );
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [toolModelConfig, t]
   );
@@ -405,6 +463,8 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
         setModelProtocolSelection,
         codexRelayMode,
         setCodexRelayMode,
+        codexResponsesPassthrough,
+        setCodexResponsesPassthrough,
         claudeDesktopRelayMode,
         setClaudeDesktopRelayMode,
         handleLaunch,

@@ -160,6 +160,9 @@ const zhHant: Partial<Translations> = {
   'agent.codexRelayLabel': 'API Router',
   'agent.codexRelayHint':
     '由 API 中轉站或 API Router 提供的資料轉發方案，如果你是第三方模型（如 DeepSeek / Qwen 等）請不要開啟！',
+  'agent.codexResponsesLabel': 'Responses',
+  'agent.codexResponsesHint':
+    '第三方模型支援 Responses 可開啟此項，提升效率（仔細閱讀你購買模型的官方文件，是否支援 Responses 協定）',
   'agent.installViaMother': 'AI 自動安裝',
   'tool.models': '模型',
   'tool.app': '應用',

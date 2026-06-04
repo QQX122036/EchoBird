@@ -121,6 +121,16 @@ export interface ApplyModelInput {
    * Other tools ignore this field.
    */
   relayMode?: boolean;
+  /**
+   * Codex-only. When true, the local proxy stays in the path and still
+   * rewrites the model id, but forwards the request to the upstream's
+   * native `/responses` endpoint verbatim instead of translating it
+   * down to Chat Completions. For third-party models that natively
+   * support the Responses protocol but still need model-id rewriting
+   * (so they can't use the proxy-bypassing relay mode). Mutually
+   * exclusive with `relayMode`. Other tools ignore this field.
+   */
+  responsesPassthrough?: boolean;
 }
 
 // ─── App Settings Types ───

@@ -166,6 +166,9 @@ const ja: Partial<Translations> = {
   'agent.codexRelayLabel': 'API Router',
   'agent.codexRelayHint':
     'API 中継または API Router が提供するデータ転送方式。サードパーティモデル(DeepSeek / Qwen など)では有効にしないでください!',
+  'agent.codexResponsesLabel': 'Responses',
+  'agent.codexResponsesHint':
+    'サードパーティモデルが Responses に対応していれば、有効化して効率を高められます。（購入したモデルの公式ドキュメントをよく読み、Responses プロトコルに対応しているか確認してください。）',
   'agent.installViaMother': 'AI 自動インストール',
   'tool.models': 'モデル',
   'tool.app': 'アプリ',

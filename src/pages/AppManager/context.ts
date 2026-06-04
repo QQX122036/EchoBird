@@ -35,6 +35,10 @@ export interface AppManagerContextType {
    *  they share ~/.codex/config.toml so a single flag is correct). */
   codexRelayMode: boolean;
   setCodexRelayMode: (v: boolean) => void;
+  /** Codex-only "Responses passthrough" toggle. Mutually exclusive with
+   *  codexRelayMode — the App Manager auto-flips so at most one is on. */
+  codexResponsesPassthrough: boolean;
+  setCodexResponsesPassthrough: (v: boolean) => void;
   /** Claude Desktop routing toggle. Kept separate from Codex because the
    *  two apps target different protocols / different relay-station compat. */
   claudeDesktopRelayMode: boolean;

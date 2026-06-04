@@ -393,6 +393,60 @@ export const ModelListSection: React.FC<ModelListSectionProps> = ({
   );
 };
 
+// A single routing toggle: label + switch + themed hover-tooltip help
+// glyph. Used for the Codex / Claude-Desktop "API Router" toggle and the
+// Codex-only "Responses" toggle, which sit side by side on one row.
+interface RoutingToggleProps {
+  label: string;
+  hint: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}
+
+function RoutingToggle({ label, hint, checked, onChange }: RoutingToggleProps) {
+  return (
+    <div className="flex items-center">
+      <span className="text-xs text-cyber-text-secondary mr-2 whitespace-nowrap">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-cyber-accent mr-2 ${
+          checked ? 'bg-cyber-accent' : 'bg-cyber-border'
+        }`}
+      >
+        <span
+          className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-all duration-200 ${
+            checked ? 'translate-x-[18px] shadow-[0_1px_2px_rgba(0,0,0,0.35)]' : 'translate-x-1'
+          }`}
+        />
+      </button>
+      {/* Help glyph — themed hover tooltip, not the native browser one. */}
+      <span className="group relative inline-flex items-center">
+        <span
+          aria-label={hint}
+          className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyber-elevated font-sans text-xs font-medium leading-none text-cyber-text-secondary cursor-help select-none hover:bg-cyber-accent/15 hover:text-cyber-accent transition-colors"
+        >
+          ?
+        </span>
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute right-0 top-full z-[100] mt-1.5 w-72 rounded border border-cyber-accent/40 bg-cyber-elevated px-3 py-2 text-[11px] leading-relaxed text-cyber-text shadow-cyber-card backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          {/* Caret — rotated square poking up out of the tooltip's top edge. */}
+          <span
+            aria-hidden="true"
+            className="absolute -top-1 right-2 h-2 w-2 rotate-45 border-l border-t border-cyber-accent/40 bg-cyber-elevated"
+          />
+          {hint}
+        </span>
+      </span>
+    </div>
+  );
+}
+
 // ===== Right Panel (config panel with tabs) =====
 
 export const AppManagerPanel: React.FC = () => {
@@ -407,19 +461,27 @@ export const AppManagerPanel: React.FC = () => {
     setModelProtocolSelection,
     codexRelayMode,
     setCodexRelayMode,
+    codexResponsesPassthrough,
+    setCodexResponsesPassthrough,
     claudeDesktopRelayMode,
     setClaudeDesktopRelayMode,
   } = useAppManager();
 
-  // Relay-mode toggle: shown for Codex CLI / Codex Desktop (shared
-  // ~/.codex/config.toml, single codexRelayMode flag) AND for Claude
-  // Desktop (separate claudeDesktopRelayMode flag, different protocol
-  // and relay-station compat). The toggle binds to whichever flag
-  // matches the currently selected app; other apps render an empty
-  // fixed-height slot so the model list below doesn't jitter on switch.
+  // Relay-mode ("API Router") toggle: shown for Codex CLI / Codex Desktop
+  // (shared ~/.codex/config.toml, single codexRelayMode flag) AND for Claude
+  // Desktop (separate claudeDesktopRelayMode flag, different protocol and
+  // relay-station compat). The toggle binds to whichever flag matches the
+  // currently selected app; other apps render an empty fixed-height slot so
+  // the model list below doesn't jitter on switch.
+  //
+  // The "Responses" passthrough toggle sits next to it but is Codex-only
+  // (the Responses protocol is OpenAI-specific; Claude Desktop's analogous
+  // passthrough is its default). The two are mutually exclusive — the
+  // provider's setters auto-flip so at most one is ever on.
   const isCodexApp = selectedTool === 'codex' || selectedTool === 'codexdesktop';
   const isClaudeDesktopApp = selectedTool === 'claudedesktop';
   const showRelayToggle = isCodexApp || isClaudeDesktopApp;
+  const showResponsesToggle = isCodexApp;
   const relayModeValue = isClaudeDesktopApp ? claudeDesktopRelayMode : codexRelayMode;
   const setRelayModeValue = isClaudeDesktopApp ? setClaudeDesktopRelayMode : setCodexRelayMode;
 
@@ -443,49 +505,21 @@ export const AppManagerPanel: React.FC = () => {
           user explicitly preferred no reserved gap when the toggle is
           absent. */}
       {showRelayToggle && (
-        <div className="px-3 h-9 flex items-center">
-          <span className="text-xs text-cyber-text-secondary mr-2">
-            {t('agent.codexRelayLabel')}
-          </span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={relayModeValue}
-            aria-label={t('agent.codexRelayLabel')}
-            onClick={() => setRelayModeValue(!relayModeValue)}
-            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-cyber-accent mr-2 ${
-              relayModeValue ? 'bg-cyber-accent' : 'bg-cyber-border'
-            }`}
-          >
-            <span
-              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-all duration-200 ${
-                relayModeValue
-                  ? 'translate-x-[18px] shadow-[0_1px_2px_rgba(0,0,0,0.35)]'
-                  : 'translate-x-1'
-              }`}
+        <div className="px-3 h-9 flex items-center gap-2">
+          {showResponsesToggle && (
+            <RoutingToggle
+              label={t('agent.codexResponsesLabel')}
+              hint={t('agent.codexResponsesHint')}
+              checked={codexResponsesPassthrough}
+              onChange={setCodexResponsesPassthrough}
             />
-          </button>
-          {/* Help glyph — themed hover tooltip, not the native browser one. */}
-          <span className="group relative inline-flex items-center">
-            <span
-              aria-label={t('agent.codexRelayHint')}
-              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyber-elevated font-sans text-xs font-medium leading-none text-cyber-text-secondary cursor-help select-none hover:bg-cyber-accent/15 hover:text-cyber-accent transition-colors"
-            >
-              ?
-            </span>
-            <span
-              role="tooltip"
-              className="pointer-events-none absolute right-0 top-full z-[100] mt-1.5 w-72 rounded border border-cyber-accent/40 bg-cyber-elevated px-3 py-2 text-[11px] leading-relaxed text-cyber-text shadow-cyber-card backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              {/* Caret — rotated square poking up out of the tooltip's top edge,
-                  aligned roughly under the ? glyph at the right side. */}
-              <span
-                aria-hidden="true"
-                className="absolute -top-1 right-2 h-2 w-2 rotate-45 border-l border-t border-cyber-accent/40 bg-cyber-elevated"
-              />
-              {t('agent.codexRelayHint')}
-            </span>
-          </span>
+          )}
+          <RoutingToggle
+            label={t('agent.codexRelayLabel')}
+            hint={t('agent.codexRelayHint')}
+            checked={relayModeValue}
+            onChange={setRelayModeValue}
+          />
         </div>
       )}
 
