@@ -563,6 +563,56 @@
     ]
   },
   {
+    "id": "gemma-4-12b",
+    "name": "Gemma 4 12B",
+    "icon": "google",
+    "description": "Google DeepMind dense — 12B, 256K context, thinking mode, multimodal (text+image+audio), Apache 2.0",
+    "huggingfaceRepo": "unsloth/gemma-4-12b-it-GGUF",
+    "variants": [
+      {
+        "quantization": "UD-IQ2_M",
+        "fileName": "gemma-4-12b-it-UD-IQ2_M.gguf",
+        "files": [
+          "gemma-4-12b-it-UD-IQ2_M.gguf"
+        ],
+        "fileSize": 4213351840,
+        "recommendedVRAM": "6 GB"
+      },
+      {
+        "quantization": "Q4_K_M",
+        "fileName": "gemma-4-12b-it-Q4_K_M.gguf",
+        "files": [
+          "gemma-4-12b-it-Q4_K_M.gguf"
+        ],
+        "fileSize": 7121860000,
+        "recommendedVRAM": "10 GB"
+      },
+      {
+        "quantization": "Q6_K",
+        "fileName": "gemma-4-12b-it-Q6_K.gguf",
+        "files": [
+          "gemma-4-12b-it-Q6_K.gguf"
+        ],
+        "fileSize": 9786021280,
+        "recommendedVRAM": "12 GB"
+      },
+      {
+        "quantization": "Q8_0",
+        "fileName": "gemma-4-12b-it-Q8_0.gguf",
+        "files": [
+          "gemma-4-12b-it-Q8_0.gguf"
+        ],
+        "fileSize": 12669646240,
+        "recommendedVRAM": "16 GB"
+      }
+    ],
+    "runtimes": [
+      "llama-server",
+      "vllm",
+      "sglang"
+    ]
+  },
+  {
     "id": "qwen3.5-9b",
     "name": "Qwen3.5 9B",
     "icon": "qwen",
@@ -745,6 +795,56 @@
         ],
         "fileSize": 8192950976,
         "recommendedVRAM": "10 GB"
+      }
+    ],
+    "runtimes": [
+      "llama-server",
+      "vllm",
+      "sglang"
+    ]
+  },
+  {
+    "id": "gemma-4-e2b",
+    "name": "Gemma 4 E2B",
+    "icon": "google",
+    "description": "Google DeepMind edge model — smallest Gemma 4, multimodal (text+image+audio), thinking, 128K context",
+    "huggingfaceRepo": "unsloth/gemma-4-E2B-it-GGUF",
+    "variants": [
+      {
+        "quantization": "UD-IQ2_M",
+        "fileName": "gemma-4-E2B-it-UD-IQ2_M.gguf",
+        "files": [
+          "gemma-4-E2B-it-UD-IQ2_M.gguf"
+        ],
+        "fileSize": 2290858112,
+        "recommendedVRAM": "4 GB"
+      },
+      {
+        "quantization": "Q4_K_M",
+        "fileName": "gemma-4-E2B-it-Q4_K_M.gguf",
+        "files": [
+          "gemma-4-E2B-it-Q4_K_M.gguf"
+        ],
+        "fileSize": 3106736256,
+        "recommendedVRAM": "4 GB"
+      },
+      {
+        "quantization": "Q6_K",
+        "fileName": "gemma-4-E2B-it-Q6_K.gguf",
+        "files": [
+          "gemma-4-E2B-it-Q6_K.gguf"
+        ],
+        "fileSize": 4501719168,
+        "recommendedVRAM": "6 GB"
+      },
+      {
+        "quantization": "Q8_0",
+        "fileName": "gemma-4-E2B-it-Q8_0.gguf",
+        "files": [
+          "gemma-4-E2B-it-Q8_0.gguf"
+        ],
+        "fileSize": 5048350848,
+        "recommendedVRAM": "8 GB"
       }
     ],
     "runtimes": [
