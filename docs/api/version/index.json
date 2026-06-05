@@ -1,5 +1,5 @@
 {
   "version": "5.1.9",
   "releaseDate": "2026-06-04",
-  "releaseNotes": "## 中文\n\n**本次更新**\n- 新增「Responses」开关：MiniMax-M3、Qwen3.7 等支持 Responses 协议的新模型，可原生接入 Codex，尽享丝滑体验\n\n## English\n\n**What's new**\n- New — Responses toggle: models that natively speak the Responses protocol (MiniMax-M3, Qwen3.7, and more) now connect to Codex natively for a smoother experience\n\n## 日本語\n\n**今回のアップデート**\n- 新登場「Responses」スイッチ：Responses プロトコルに対応したモデル（MiniMax-M3、Qwen3.7 など）を Codex にネイティブ接続し、より滑らかな体験を"
+  "releaseNotes": "## 中文\n\n**本次更新**\n- 修复 macOS / Linux 下 Codex CLI、Hermes 桌面端的启动问题，现可正常拉起\n- 「安装与修复」连接更稳定，弱网环境下不再因切换中断\n- 新增「Responses」开关：MiniMax-M3、Qwen3.7 等支持 Responses 协议的新模型，可原生接入 Codex，尽享丝滑体验\n\n## English\n\n**What's new**\n- Fixed Codex CLI and Hermes launch on macOS / Linux — they now start correctly from the desktop\n- More stable connections in Install & Repair — no more drops on flaky networks\n- New — Responses toggle: models that natively speak the Responses protocol (MiniMax-M3, Qwen3.7, and more) now connect to Codex natively for a smoother experience\n\n## 日本語\n\n**今回のアップデート**\n- macOS / Linux での Codex CLI・Hermes の起動問題を修正し、正常に起動できるように\n- 「インストールと修復」の接続が安定し、不安定なネットワークでも途切れにくくなりました\n- 新登場「Responses」スイッチ：Responses プロトコルに対応したモデル（MiniMax-M3、Qwen3.7 など）を Codex にネイティブ接続し、より滑らかな体験を"
 }
