@@ -1,5 +1,5 @@
 {
-  "version": "5.2.2",
-  "releaseDate": "2026-06-06",
-  "releaseNotes": "## 中文\n\n- 新增 Codex 官方插件市场:中国大陆直连,免 VPN、免翻墙。\n- 解锁步骤:「安装与修复」→「帮我解锁 Codex 桌面端的插件」\n\n## English\n\n- New: official Codex plugin marketplace with direct access from mainland China — no VPN needed.\n- How: \"Install & Repair\" → \"Help me unlock Codex Desktop plugins\"\n\n## 日本語\n\n- 新機能:Codex 公式プラグインマーケット — 中国本土から直接接続、VPN 不要。\n- 手順:「インストールと修復」→「Codex デスクトップのプラグインを解放する」"
+  "version": "5.2.3",
+  "releaseDate": "2026-06-08",
+  "releaseNotes": "## 中文\n\n- 新增 Codex 官方插件市场:中国大陆直连,免 VPN、免翻墙。\n- 解锁步骤:「安装与修复」→「帮我解锁 Codex 桌面端的插件」\n- 修复「安装与修复」在 OpenRouter 复杂路由下出现 Not Found 的问题。\n\n## English\n\n- New: official Codex plugin marketplace with direct access from mainland China — no VPN needed.\n- How: \"Install & Repair\" → \"Help me unlock Codex Desktop plugins\"\n- Fixed: \"Install & Repair\" returning Not Found with OpenRouter under complex provider routing.\n\n## 日本語\n\n- 新機能:Codex 公式プラグインマーケット — 中国本土から直接接続、VPN 不要。\n- 手順:「インストールと修復」→「Codex デスクトップのプラグインを解放する」\n- 修正:複雑なプロバイダールーティングの OpenRouter で「インストールと修復」が Not Found になる問題。"
 }

@@ -1,6 +1,6 @@
 [package]
 name = "echobird"
-version = "5.2.2"
+version = "5.2.3"
 description = "The Nexus for Models, Agents & Vibe Coding"
 authors = ["Echobird Team"]
 license = "BUSL-1.1"

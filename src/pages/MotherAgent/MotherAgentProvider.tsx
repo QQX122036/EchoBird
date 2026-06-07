@@ -504,30 +504,27 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
       }
 
       try {
-        // Triple-fallback protocol strategy:
-        //   1. Has anthropicUrl  → use it directly as Anthropic
-        //   2. Only baseUrl      → derive Anthropic URL (/v1 → /anthropic) and try first
-        //   3. Backend gets 400  → auto-downgrade to OpenAI base_url
-        const deriveAnthropicUrl = (base: string): string | null => {
-          if (!base) return null;
-          // Replace trailing /v1 or /v1/ with /anthropic (works for local LLM proxy)
-          const stripped = base.trim().replace(/\/v1\/?$/, '');
-          // Only derive if the original URL had /v1 (to avoid random derivations)
-          if (stripped !== base.trim()) return `${stripped}/anthropic`;
-          return null;
-        };
-
-        const anthropicUrl = modelData.anthropicUrl || deriveAnthropicUrl(modelData.baseUrl || '');
+        // Protocol is decided by config, never guessed. Use the Anthropic
+        // Messages API only when the model carries an explicit anthropicUrl
+        // (the model directory sets it solely for vendors that natively serve
+        // /v1/messages; users can set it too). Otherwise use the
+        // OpenAI-compatible base_url.
+        //
+        // The backend runs one protocol per session and never switches
+        // mid-flight (auto-downgrade was removed in v5.2.0). So fabricating an
+        // Anthropic URL from a "/v1" base — as we used to — routes every
+        // OpenAI-only provider (OpenRouter, OpenAI, Grok, Groq, Together, …)
+        // to a non-existent "/anthropic/v1/messages" endpoint and fails hard
+        // with "Not Found" instead of just using the OpenAI path that works.
+        const anthropicUrl = modelData.anthropicUrl || undefined;
         await api.sendAgentMessage({
           message: message.trim(),
           model_id: modelData.internalId,
-          // Always pass OpenAI URL as base_url (OpenAI fallback)
           base_url: modelData.baseUrl || '',
           api_key: modelData.apiKey,
           model_name: modelData.modelId || modelData.name,
-          // Start with Anthropic when available; backend downgrades to OpenAI on 400
           provider: anthropicUrl ? 'anthropic' : 'openai',
-          anthropic_url: anthropicUrl || undefined,
+          anthropic_url: anthropicUrl,
           server_ids: selectedServerId === 'local' ? [] : [selectedServerId],
           skills: [],
           locale: locale || undefined,
