@@ -645,7 +645,12 @@ export const LocalServerMain: React.FC = () => {
 
         {/* Parameter row */}
         <div className="grid grid-cols-4 gap-3">
-          {/* Compute: GPU runtimes (vLLM/SGLang) manage GPU internally; llama-server with GPU locks to GPU-Full */}
+          {/* Compute mode is auto-determined, never a user choice here: the list
+              always resolves to a single option — GPU-Full when a supported GPU
+              is present (or for vLLM/SGLang, which manage the GPU internally),
+              otherwise CPU-only on a GPU-less machine. So it is always locked and
+              acts purely as a status indicator. (Previously the CPU-only case was
+              left interactive, showing a pointless single-item dropdown.) */}
           <div className="flex items-center gap-2">
             <label className="text-[11px] text-cyber-text-secondary font-mono font-bold flex-shrink-0">
               {t('server.compute')}
@@ -653,7 +658,7 @@ export const LocalServerMain: React.FC = () => {
             <MiniSelect
               value={runtime !== 'llama-server' ? '-1' : String(gpuLayers)}
               onChange={(v) => setGpuLayers(Number(v))}
-              disabled={isRunning || runtime !== 'llama-server' || hasNvidiaGpu || hasAmdGpu}
+              disabled
               options={[
                 // GPU-Full always first; shown when any GPU present or non-llama runtime
                 ...(runtime !== 'llama-server' || hasNvidiaGpu || hasAmdGpu
