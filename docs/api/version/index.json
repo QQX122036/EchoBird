@@ -1,5 +1,5 @@
 {
-  "version": "5.2.5",
+  "version": "5.2.6",
   "releaseDate": "2026-06-11",
   "releaseNotes": "## 中文\n\n- 支持 MiMo Code:小米推出的 AI 编程命令行工具,一键安装、一键切换模型。\n- 修复 Codex 接入第三方模型时,新 V2 协议的对话自动压缩可能导致对话中断的问题。\n- 界面优化:修复部分设备上中文文字模糊不清、显示发虚的问题。\n- Codex 安装插件需要 Git:「安装与修复」新增「帮我安装 Git」快捷命令。\n\n## English\n\n- MiMo Code support: Xiaomi's AI coding CLI — one-click install and model switching.\n- Fixed Codex aborting conversations on the new V2 protocol's auto-compaction step when bridged to third-party models.\n- UI: fixed blurry / unclear Chinese text on some machines.\n- Codex plugin installs need Git — added an \"Install & Repair\" → \"Help me install Git\" quick command.\n\n## 日本語\n\n- MiMo Code 対応:Xiaomi の AI コーディング CLI — ワンクリックでインストールとモデル切り替え。\n- Codex を第三者モデルに接続した際、新しい V2 プロトコルの自動圧縮で会話が中断する問題を修正。\n- UI:一部端末で中国語が不鮮明・ぼやけて表示される問題を修正。\n- Codex のプラグイン導入には Git が必要 —「インストールと修復」に「Git のインストールを支援」クイックコマンドを追加。"
 }
