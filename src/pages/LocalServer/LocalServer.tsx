@@ -809,18 +809,20 @@ export const LocalServerMain: React.FC = () => {
                       </tbody>
                     </table>
                   </div>
-                  {/* CUDA helpers — Windows only (macOS has no CUDA; Linux users handle their own toolkit) */}
+                  {/* CUDA helpers — Windows only (macOS has no CUDA; Linux users handle their own toolkit).
+                      Same chip style as the Mother Agent quick-command chips: NOT bold (bold CJK at this
+                      size renders cramped/blurry) and bordered for visual consistency. */}
                   {isWindows && (
                     <div className="flex justify-center gap-3 mt-4">
                       <button
                         onClick={() => goToMother(t('mother.hintDetectCuda'))}
-                        className="py-1.5 px-5 text-xs font-bold rounded bg-cyber-elevated text-cyber-text hover:bg-cyber-elevated/80 transition-all"
+                        className="px-3 py-1.5 text-xs rounded-lg bg-cyber-surface border border-cyber-border text-cyber-text-secondary hover:bg-cyber-elevated hover:text-cyber-text hover:border-cyber-text-muted/50 transition-colors cursor-pointer"
                       >
                         {t('mother.hintDetectCuda')}
                       </button>
                       <button
                         onClick={() => goToMother(t('mother.hintInstallCuda'))}
-                        className="py-1.5 px-5 text-xs font-bold rounded bg-cyber-elevated text-cyber-text hover:bg-cyber-elevated/80 transition-all"
+                        className="px-3 py-1.5 text-xs rounded-lg bg-cyber-surface border border-cyber-border text-cyber-text-secondary hover:bg-cyber-elevated hover:text-cyber-text hover:border-cyber-text-muted/50 transition-colors cursor-pointer"
                       >
                         {t('mother.hintInstallCuda')}
                       </button>
