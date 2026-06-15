@@ -1,5 +1,5 @@
 {
   "version": "5.2.7",
   "releaseDate": "2026-06-15",
-  "releaseNotes": "## 中文\n\n- 全新「我的AI生涯」:汇总 Claude、Codex、OpenCode、Hermes、MiMo 各家族的对话历史与活跃热力图,一处回顾你的 AI 足迹。\n- 其他界面细节与稳定性优化。\n\n## English\n\n- New \"My AI Career\" page: a unified view of your session history and an activity heatmap across the Claude, Codex, OpenCode, Hermes, and MiMo families.\n- Various UI refinements and stability improvements.\n\n## 日本語\n\n- 新ページ「マイ AI キャリア」:Claude・Codex・OpenCode・Hermes・MiMo 各ファミリーの会話履歴とアクティビティ・ヒートマップを一箇所で確認。\n- その他の UI 改善と安定性向上。"
+  "releaseNotes": "## 中文\n\n- 新增「我的AI网瘾」…… 咳、口误,是「我的AI生涯」界面。\n- 修复 Codex 切换第三方大模型时,联网搜索能力调用的兜底问题。\n\n## English\n\n- New \"My AI Addiction\"… ahem, \"My AI Career\" page.\n- Fixed web-search invocation and fallback when Codex is switched to a third-party model.\n\n## 日本語\n\n- 新ページ「マイ AI 中毒」…… コホン、失礼、「マイ AI キャリア」。\n- Codex を第三者モデルに切り替えた際の Web 検索呼び出しとフォールバックの問題を修正。"
 }
