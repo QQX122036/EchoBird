@@ -126,6 +126,10 @@ static BUNDLED: BundledAssets = BundledAssets {
             "workbuddy",
             include_str!("../../docs/api/tools/install/workbuddy.json"),
         ),
+        (
+            "zcode",
+            include_str!("../../docs/api/tools/install/zcode.json"),
+        ),
     ],
 };
 

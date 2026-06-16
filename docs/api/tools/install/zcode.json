@@ -1,0 +1,37 @@
+{
+    "id": "zcode",
+    "displayName": "ZCode",
+    "homepage": "https://zcode.z.ai",
+    "docs": "https://zcode.z.ai/en/docs/welcome",
+    "kind": "desktop_app",
+    "platforms": ["windows", "macos", "linux"],
+    "install": {
+        "windows_download": "Open https://zcode.z.ai/cn#all-downloads in the browser, click the Windows download. Saves to %USERPROFILE%\\Downloads by default; installs to %LOCALAPPDATA%\\Programs\\ZCode.",
+        "macos_download": "Open https://zcode.z.ai/cn#all-downloads in the browser, click the macOS download (.dmg). Saves to ~/Downloads by default.",
+        "linux_download": "Open https://zcode.z.ai/cn#all-downloads in the browser, download the Linux build (.deb / .rpm / AppImage) and install it.",
+        "note": "GUI desktop application (Electron) — an OpenCode-based coding agent by Z.AI (Zhipu). Always tell the user the download location and ask them to run the installer themselves."
+    },
+    "install_flow": {
+        "summary": "Download installer from zcode.z.ai -> user double-clicks -> follow the install wizard",
+        "agent_steps": [
+            "Detect OS first.",
+            "Open https://zcode.z.ai/cn#all-downloads and download the installer for the detected OS to the Downloads folder.",
+            "After the download finishes, tell the user the EXACT file path.",
+            "Open the installer (Start-Process on Windows, open on macOS).",
+            "Tell the user to follow the install wizard to finish.",
+            "Do NOT try to automate the GUI wizard."
+        ],
+        "tell_user": [
+            "Download location (full path)",
+            "That the installer was opened",
+            "That they should click through the wizard themselves"
+        ]
+    },
+    "identity_guard": {
+        "description": "ZCode is Z.AI's (Zhipu) GUI desktop coding agent, based on OpenCode. It is DIFFERENT from OpenCode Desktop and from the OpenCode CLI. Its config lives under ~/.zcode/v2/config.json."
+    },
+    "network_requirements": {
+        "test_urls": ["https://zcode.z.ai"],
+        "mirrors": {}
+    }
+}
