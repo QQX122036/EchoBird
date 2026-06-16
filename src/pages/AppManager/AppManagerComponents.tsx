@@ -247,12 +247,12 @@ export const ModelListSection: React.FC<ModelListSectionProps> = ({
               }}
             />
           ) : isLocalServer ? (
-            <div className="w-6 h-6 rounded bg-cyber-accent/15 flex items-center justify-center text-cyber-accent">
-              <ServerIcon size={14} />
+            <div className="w-6 h-6 flex items-center justify-center text-cyber-accent">
+              <ServerIcon size={22} />
             </div>
           ) : (
-            <div className="w-6 h-6 rounded bg-cyber-text/15 flex items-center justify-center text-cyber-text">
-              <BoxIcon size={14} />
+            <div className="w-6 h-6 flex items-center justify-center text-cyber-text">
+              <BoxIcon size={22} />
             </div>
           )}
         </div>

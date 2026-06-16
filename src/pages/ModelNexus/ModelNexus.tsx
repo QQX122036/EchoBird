@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { open as shellOpen } from '@tauri-apps/plugin-shell';
-import { X, Box, ExternalLink, Plus, Lock, Unlock } from 'lucide-react';
+import { X, Box, ExternalLink, Plus, Lock, Unlock, ClipboardPaste } from 'lucide-react';
 import { ModelCard, ModelCardSkeleton, getModelIcon } from '../../components';
 import { useI18n } from '../../hooks/useI18n';
 import * as api from '../../api/tauri';
@@ -552,8 +552,8 @@ function ProviderRow({ entry, onAdd }: { entry: DirectoryEntry; onAdd: () => voi
               }}
             />
           ) : (
-            <div className="w-6 h-6 rounded bg-cyber-text/15 flex items-center justify-center text-cyber-text">
-              <Box size={14} />
+            <div className="w-6 h-6 flex items-center justify-center text-cyber-text">
+              <Box size={22} />
             </div>
           )}
         </div>
@@ -786,9 +786,30 @@ export function AddModelModal() {
                       : newModelForm.apiKey
                   }
                   onChange={(e) => setNewModelForm((prev) => ({ ...prev, apiKey: e.target.value }))}
-                  className="w-full bg-cyber-input border border-cyber-border px-2 py-1.5 pr-8 text-xs text-cyber-text font-mono focus:border-cyber-border focus:outline-none rounded-button"
+                  className="w-full bg-cyber-input border border-cyber-border px-2 py-1.5 pr-14 text-xs text-cyber-text font-mono focus:border-cyber-border focus:outline-none rounded-button"
                   readOnly={newModelForm.apiKey.startsWith('enc:v1:')}
                 />
+                {/* One-click paste from clipboard — for users who don't know
+                    Ctrl+V. Shown only while the key is editable (plaintext);
+                    hidden once encrypted (the field is read-only then). */}
+                {newModelForm.apiKey !== 'local' && !newModelForm.apiKey.startsWith('enc:v1:') && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const text = (await navigator.clipboard.readText()).trim();
+                        if (text) {
+                          setNewModelForm((prev) => ({ ...prev, apiKey: text }));
+                        }
+                      } catch {
+                        /* clipboard unavailable / denied — no-op */
+                      }
+                    }}
+                    className="absolute right-9 top-1/2 -translate-y-1/2 text-cyber-text/70 transition-colors hover:opacity-80"
+                  >
+                    <ClipboardPaste size={14} />
+                  </button>
+                )}
                 {newModelForm.apiKey !== 'local' && (
                   <button
                     type="button"
