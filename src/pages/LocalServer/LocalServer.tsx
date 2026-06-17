@@ -231,6 +231,15 @@ export const LocalServerMain: React.FC = () => {
   const [customCmdOpen, setCustomCmdOpen] = useState(false);
   const [customCmdText, setCustomCmdText] = useState('');
   const [defaultCmdText, setDefaultCmdText] = useState('');
+  // Whether a saved custom launch command exists. It carries its own engine on
+  // line 1, so START can run from it even when the bundled engine isn't set up.
+  const [hasCustomCmd, setHasCustomCmd] = useState(false);
+  useEffect(() => {
+    api
+      .getLlmCustomCommand()
+      .then((c) => setHasCustomCmd(!!c))
+      .catch(() => {});
+  }, []);
 
   // Get engine download progress from global DownloadContext (single source of truth)
   // Key: use runtime name so progress matches the current engine being installed
@@ -460,22 +469,34 @@ export const LocalServerMain: React.FC = () => {
   };
 
   const openCustomCmd = async () => {
+    const model = selectedModelPath || MODEL_TOKEN;
+    // The auto default needs an installed engine (+ model) to compute. When the
+    // engine isn't set up yet — which is exactly when a bring-your-own-engine
+    // user opens this to point at their own build — that call fails; treat it as
+    // "no default" and still open the dialog rather than blocking on it.
+    let defText = '';
     try {
-      const model = selectedModelPath || MODEL_TOKEN;
       const def = await api.getLlmDefaultCommand(
         selectedModelPath || '',
         serverPort,
         gpuLayers,
         contextSize
       );
-      setDefaultCmdText(cmdToText({ exe: def.exe, args: setModelInArgs(def.args, model) }));
+      defText = cmdToText({ exe: def.exe, args: setModelInArgs(def.args, model) });
+    } catch {
+      defText = '';
+    }
+    setDefaultCmdText(defText);
+    try {
       const custom = await api.getLlmCustomCommand();
-      const cmd = custom ?? def;
-      setCustomCmdText(cmdToText({ exe: cmd.exe, args: setModelInArgs(cmd.args, model) }));
-      setCustomCmdOpen(true);
+      setCustomCmdText(
+        custom ? cmdToText({ exe: custom.exe, args: setModelInArgs(custom.args, model) }) : defText
+      );
     } catch (e) {
       setLogs((prev) => [...prev, `[Error] ${e}`]);
+      setCustomCmdText(defText);
     }
+    setCustomCmdOpen(true);
   };
 
   const saveCustomCmd = async () => {
@@ -486,8 +507,10 @@ export const LocalServerMain: React.FC = () => {
     try {
       if (lines.length === 0) {
         await api.clearLlmCustomCommand();
+        setHasCustomCmd(false);
       } else {
         await api.setLlmCustomCommand(lines[0], lines.slice(1));
+        setHasCustomCmd(true);
         // Adopt a hand-typed real model path as the selection so START enables
         // and the right panel reflects it (the placeholder token is ignored).
         const m = modelFromArgs(lines.slice(1));
@@ -504,6 +527,7 @@ export const LocalServerMain: React.FC = () => {
   const resetCustomCmd = async () => {
     try {
       await api.clearLlmCustomCommand();
+      setHasCustomCmd(false);
       setCustomCmdText(defaultCmdText);
     } catch (e) {
       setLogs((prev) => [...prev, `[Error] ${e}`]);
@@ -513,13 +537,18 @@ export const LocalServerMain: React.FC = () => {
   // Render START button (state machine)
   const renderStartButton = () => {
     // Shared button styles — solid fill matching AppManager launch button
+    // START needs both a model and an engine. The engine can come from the
+    // bundled install OR a saved custom command (whose line 1 is its own exe),
+    // so a custom command lets a no-engine user run their own build. The model
+    // is always selectedModelPath (a hand-typed -m is adopted into it on save),
+    // so that half is unchanged.
     const disabledStart =
       !isRunning &&
       (!selectedModelPath ||
-        engineStatus === 'not-installed' ||
+        (engineStatus === 'not-installed' && !hasCustomCmd) ||
         engineStatus === 'downloading' ||
         engineStatus === 'checking' ||
-        engineStatus === 'error');
+        (engineStatus === 'error' && !hasCustomCmd));
     const btnBase =
       'font-bold text-base font-mono transition-all flex items-center justify-center gap-2 flex-shrink-0 rounded-lg';
     // No border on active — `btnDisabled` and `btnStop` don't carry one,
@@ -563,12 +592,11 @@ export const LocalServerMain: React.FC = () => {
       </button>
     );
 
-    // Gear: custom launch command. Only meaningful for an installed
-    // llama-server engine with a model selected (the default command can't be
-    // built otherwise); null in every other state so it doesn't show.
-    const canCustomize =
-      runtime === 'llama-server' &&
-      (engineStatus === 'ready' || engineStatus === 'update-available');
+    // Gear: custom launch command. Always available on the llama-server runtime
+    // — even with no bundled engine installed — so a user can open it and point
+    // at their own llama.cpp build instead. The auto-default prefill needs an
+    // engine, but openCustomCmd degrades gracefully (blank default) without one.
+    const canCustomize = runtime === 'llama-server';
     const gearBtn = canCustomize ? (
       <button
         onClick={openCustomCmd}
