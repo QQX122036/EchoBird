@@ -154,6 +154,26 @@ export const DownloadProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await api.downloadModel(repo, files);
     } catch (e) {
       console.error('[DownloadContext] Download failed:', e);
+      // The invoke rejected before any progress event — transition the optimistic
+      // row to 'error' and schedule the same 5s cleanup the progress path uses,
+      // so it doesn't sit at 0% 'downloading' forever.
+      setDownloads((prev) => {
+        const next = new Map(prev);
+        const existing = prev.get(primary);
+        if (existing) next.set(primary, { ...existing, status: 'error' });
+        return next;
+      });
+      const prevTimer = cleanupTimers.current.get(primary);
+      if (prevTimer) clearTimeout(prevTimer);
+      const timer = setTimeout(() => {
+        setDownloads((prev) => {
+          const next = new Map(prev);
+          next.delete(primary);
+          return next;
+        });
+        cleanupTimers.current.delete(primary);
+      }, 5000);
+      cleanupTimers.current.set(primary, timer);
     }
   }, []);
 

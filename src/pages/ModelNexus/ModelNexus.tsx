@@ -793,25 +793,26 @@ export function AddModelModal() {
                 {/* One-click paste from clipboard — for users who don't know
                     Ctrl+V. Shown only while the key is editable (plaintext);
                     hidden once encrypted (the field is read-only then). */}
-                {newModelForm.apiKey !== 'local' && !newModelForm.apiKey.startsWith('enc:v1:') && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        const text = (await readClipboardText()).trim();
-                        if (text) {
-                          setNewModelForm((prev) => ({ ...prev, apiKey: text }));
+                {newModelForm.apiKey !== 'not-needed' &&
+                  !newModelForm.apiKey.startsWith('enc:v1:') && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const text = (await readClipboardText()).trim();
+                          if (text) {
+                            setNewModelForm((prev) => ({ ...prev, apiKey: text }));
+                          }
+                        } catch {
+                          /* clipboard empty / unreadable — no-op */
                         }
-                      } catch {
-                        /* clipboard empty / unreadable — no-op */
-                      }
-                    }}
-                    className="absolute right-9 top-1/2 -translate-y-1/2 text-cyber-text/70 transition-colors hover:opacity-80"
-                  >
-                    <ClipboardCopy size={14} />
-                  </button>
-                )}
-                {newModelForm.apiKey !== 'local' && (
+                      }}
+                      className="absolute right-9 top-1/2 -translate-y-1/2 text-cyber-text/70 transition-colors hover:opacity-80"
+                    >
+                      <ClipboardCopy size={14} />
+                    </button>
+                  )}
+                {newModelForm.apiKey !== 'not-needed' && (
                   <button
                     type="button"
                     disabled={!newModelForm.apiKey}

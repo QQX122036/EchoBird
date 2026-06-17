@@ -55,7 +55,14 @@ export function MotherAgentMain() {
   // Estimated UTF-8 byte footprint of the current chat — drives the ring
   // around the "?" hint so users can see how close they are to the
   // agent_loop trim threshold (MAX_CONTEXT_BYTES in echobird_core).
-  const contextBytes = React.useMemo(() => estimateContextBytes(chatOutput), [chatOutput]);
+  // estimateContextBytes re-encodes the whole transcript; recomputing it on
+  // every streamed token is O(n^2) and only drives a coarse visual ring, so
+  // debounce it (recompute ~300ms after updates settle) instead of per-token.
+  const [contextBytes, setContextBytes] = useState(0);
+  useEffect(() => {
+    const id = setTimeout(() => setContextBytes(estimateContextBytes(chatOutput)), 300);
+    return () => clearTimeout(id);
+  }, [chatOutput]);
 
   // Listen for clear-chat event from title bar
   useEffect(() => {

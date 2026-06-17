@@ -264,10 +264,15 @@ export const LocalServerMain: React.FC = () => {
 
   // Check engine on mount AND when runtime changes
   useEffect(() => {
+    // Guard against a slower earlier check resolving after a newer one (rapid
+    // runtime switches) and overwriting engineStatus with the wrong runtime's
+    // data — mirrors the cancelled guard on the version-picker effect below.
+    let cancelled = false;
     const check = async () => {
       setEngineStatus('checking');
       try {
         const status = await api.getLocalEngineStatus(runtime);
+        if (cancelled) return;
         const entry = status.engines.find((e) => e.name === runtime);
         if (entry?.installDir) setEngineInstallDir(entry.installDir);
         // Reset names first so stale data from previous runtime doesn't linger
@@ -281,10 +286,13 @@ export const LocalServerMain: React.FC = () => {
           setEngineStatus('ready');
         }
       } catch {
-        setEngineStatus('error');
+        if (!cancelled) setEngineStatus('error');
       }
     };
     check();
+    return () => {
+      cancelled = true;
+    };
   }, [runtime]);
 
   // Pre-fetch the version picker options on mount (Windows + NVIDIA
@@ -364,6 +372,10 @@ export const LocalServerMain: React.FC = () => {
   };
 
   const lastRunning = useRef<boolean>(isRunning);
+  // Last server-log buffer we rendered, so the 1s poll only overwrites `logs`
+  // when the backend buffer actually changed (otherwise a locally-appended
+  // [Error] line gets clobbered on the next tick while the buffer is static).
+  const lastServerLogs = useRef<string>('');
 
   // Polling: server status + logs
   useEffect(() => {
@@ -376,7 +388,9 @@ export const LocalServerMain: React.FC = () => {
           window.dispatchEvent(new Event('models-changed'));
         }
         const serverLogs = await api.getLlmServerLogs();
-        if (serverLogs.length > 0) {
+        const joined = serverLogs.join('\n');
+        if (serverLogs.length > 0 && joined !== lastServerLogs.current) {
+          lastServerLogs.current = joined;
           setLogs(serverLogs);
         }
       } catch (e) {

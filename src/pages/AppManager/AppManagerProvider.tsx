@@ -48,12 +48,20 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
   const [userModels, setUserModels] = useState<ModelConfig[]>([]);
   const userModelsActive = isActive || activePage === 'myProjects';
   useEffect(() => {
-    if (api.getModels) {
-      api
-        .getModels()
-        .then(setUserModels)
-        .catch((e) => console.error('Load models failed:', e));
-    }
+    if (!api.getModels) return;
+    // Guard against out-of-order resolution: rapid 应用管理/我的AI项目 toggles can
+    // overlap getModels() calls, and a slower earlier one resolving last would
+    // clobber userModels with stale data.
+    let ignore = false;
+    api
+      .getModels()
+      .then((models) => {
+        if (!ignore) setUserModels(models);
+      })
+      .catch((e) => console.error('Load models failed:', e));
+    return () => {
+      ignore = true;
+    };
   }, [userModelsActive]);
 
   // AI-installable IDs from bundled install/index.json (offline-first).
@@ -276,7 +284,7 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
     // exclude it from deps to avoid an effect storm — the closure
     // captures the latest values either way via the relayOverride arg.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [toolModelConfig, t]
+    [toolModelConfig, t, userModels]
   );
 
   // Responses-passthrough setter — mirrors setCodexRelayMode (shared across
@@ -305,7 +313,7 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
       );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [toolModelConfig, t]
+    [toolModelConfig, t, userModels]
   );
 
   // Claude Desktop relay-mode setter — mirrors setCodexRelayMode but
@@ -326,7 +334,7 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [toolModelConfig, t]
+    [toolModelConfig, t, userModels]
   );
 
   // Restore = delete the tool's config file. The tool itself regenerates
@@ -407,6 +415,7 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
         const result = await api.launchGame(selectedTool, toolData!.launchFile!, modelConfig);
         if (result && !result.success) {
           console.error('Failed to launch:', result.message);
+          if (result.message) setApplyError(result.message);
         } else if (selectedModel) {
           // Mirror the apply-path optimistic update (see line ~209). launchable
           // tools (games / WebView utilities) inject the model via
@@ -426,6 +435,7 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
           await api.startTool(selectedTool, toolData?.startCommand);
         } catch (err) {
           console.error('Failed to launch tool:', err);
+          setApplyError(err instanceof Error ? err.message : String(err));
         }
       }
     }
