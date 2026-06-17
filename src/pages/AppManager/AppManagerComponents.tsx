@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Server as ServerIcon, Box as BoxIcon } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Server as ServerIcon, Box as BoxIcon, Copy, Check } from 'lucide-react';
 import { ToolCard, getModelIcon } from '../../components';
 import { useI18n } from '../../hooks/useI18n';
 import type { ModelConfig, LocalTool } from '../../api/types';
@@ -391,17 +391,56 @@ export const ModelListSection: React.FC<ModelListSectionProps> = ({
   );
 };
 
-// A single routing toggle: label + switch + themed hover-tooltip help
-// glyph. Used for the Codex / Claude-Desktop "API Router" toggle and the
-// Codex-only "Responses" toggle, which sit side by side on one row.
+// A single routing toggle: label + switch + themed help glyph with an
+// interactive tooltip. Used for the Codex / Claude-Desktop "API Router"
+// toggle, the Codex-only "Responses" toggle, and the Claude 1M toggle. The
+// tooltip stays open while the pointer is over the glyph OR the tooltip
+// itself, so an optional one-click-copy command chip inside it is reachable.
 interface RoutingToggleProps {
   label: string;
   hint: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  // Optional command rendered inside the tooltip as a copyable chip (e.g. the
+  // Claude Desktop `/model …[1m]` switch the user must paste in chat).
+  copyCommand?: string;
 }
 
-function RoutingToggle({ label, hint, checked, onChange }: RoutingToggleProps) {
+function RoutingToggle({ label, hint, checked, onChange, copyCommand }: RoutingToggleProps) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear any pending close timer on unmount so it can't fire after teardown.
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
+  const showTip = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setOpen(true);
+  };
+  // Small grace delay so moving the pointer from "?" across the gap into the
+  // tooltip (to reach the copy button) doesn't dismiss it.
+  const scheduleHide = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpen(false), 160);
+  };
+
+  const handleCopy = async () => {
+    if (!copyCommand) return;
+    try {
+      await navigator.clipboard.writeText(copyCommand);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard may be unavailable (permissions / webview) — fail silently.
+    }
+  };
+
   return (
     <div className="flex items-center">
       <span className="text-xs text-cyber-text-secondary mr-2 whitespace-nowrap">{label}</span>
@@ -421,8 +460,14 @@ function RoutingToggle({ label, hint, checked, onChange }: RoutingToggleProps) {
           }`}
         />
       </button>
-      {/* Help glyph — themed hover tooltip, not the native browser one. */}
-      <span className="group relative inline-flex items-center">
+      {/* Help glyph — themed, interactive tooltip (not the native browser one).
+          onMouseEnter/Leave on this wrapper covers both the glyph and the
+          tooltip (a descendant), so the tooltip stays open while hovered. */}
+      <span
+        className="relative inline-flex items-center"
+        onMouseEnter={showTip}
+        onMouseLeave={scheduleHide}
+      >
         <span
           aria-label={hint}
           className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-cyber-elevated font-sans text-xs font-medium leading-none text-cyber-text-secondary cursor-help select-none hover:bg-cyber-accent/15 hover:text-cyber-accent transition-colors"
@@ -431,7 +476,9 @@ function RoutingToggle({ label, hint, checked, onChange }: RoutingToggleProps) {
         </span>
         <span
           role="tooltip"
-          className="pointer-events-none absolute right-0 top-full z-[100] mt-1.5 w-72 rounded border border-cyber-accent/40 bg-cyber-elevated px-3 py-2 text-[11px] leading-relaxed text-cyber-text shadow-cyber-card backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+          className={`absolute right-0 top-full z-[100] mt-1.5 w-72 rounded border border-cyber-accent/40 bg-cyber-elevated px-3 py-2 text-[11px] leading-relaxed text-cyber-text shadow-cyber-card backdrop-blur-sm transition-opacity ${
+            open ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
         >
           {/* Caret — rotated square poking up out of the tooltip's top edge. */}
           <span
@@ -439,6 +486,21 @@ function RoutingToggle({ label, hint, checked, onChange }: RoutingToggleProps) {
             className="absolute -top-1 right-2 h-2 w-2 rotate-45 border-l border-t border-cyber-accent/40 bg-cyber-elevated"
           />
           {hint}
+          {copyCommand && (
+            <span className="mt-2 flex items-center gap-1.5 rounded border border-cyber-border bg-cyber-bg/60 px-1.5 py-1">
+              <code className="flex-1 break-all font-mono text-[10.5px] text-cyber-accent">
+                {copyCommand}
+              </code>
+              <button
+                type="button"
+                onClick={handleCopy}
+                aria-label={copied ? 'Copied' : 'Copy command'}
+                className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded text-cyber-text-secondary hover:bg-cyber-accent/15 hover:text-cyber-accent transition-colors"
+              >
+                {copied ? <Check size={13} className="text-cyber-accent" /> : <Copy size={13} />}
+              </button>
+            </span>
+          )}
         </span>
       </span>
     </div>
@@ -522,6 +584,7 @@ export const AppManagerPanel: React.FC = () => {
             <RoutingToggle
               label="1M"
               hint={t('agent.claude1mHint')}
+              copyCommand={isClaudeDesktopApp ? '/model claude-opus-4-8[1m]' : undefined}
               checked={claude1mMode}
               onChange={setClaude1mMode}
             />
