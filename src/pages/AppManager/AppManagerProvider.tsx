@@ -184,8 +184,7 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
     const toolData = detectedTools.find((t) => t.id === toolId);
     const toolProtocols = toolData?.apiProtocol || ['openai'];
 
-    const userSelectedProtocol =
-      modelProtocolSelection[model.modelId || ''] || modelProtocolSelection[internalId];
+    const userSelectedProtocol = modelProtocolSelection[internalId];
     const selectedProtocol =
       userSelectedProtocol || (toolProtocols[0] === 'anthropic' ? 'anthropic' : 'openai');
 
@@ -401,7 +400,7 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
               apiKey: selectedModel.apiKey,
               model: selectedModel.modelId || selectedModel.name || 'unknown',
               name: selectedModel.name,
-              protocol: modelProtocolSelection[selectedModel.modelId || ''] || 'openai',
+              protocol: modelProtocolSelection[selectedModel.internalId] || 'openai',
               locale,
             }
           : { locale };

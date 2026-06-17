@@ -63,6 +63,7 @@ export const DownloadProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Listen to Tauri download progress events
   useEffect(() => {
     let unlisten: (() => void) | null = null;
+    let cancelled = false;
     api
       .onDownloadProgress((data) => {
         setDownloads((prev) => {
@@ -100,10 +101,14 @@ export const DownloadProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
       })
       .then((fn) => {
-        unlisten = fn;
+        // If the effect already cleaned up before this resolved, unlisten now
+        // so the listener isn't leaked (StrictMode mounts/unmounts fast).
+        if (cancelled) fn();
+        else unlisten = fn;
       });
 
     return () => {
+      cancelled = true;
       unlisten?.();
       // Cleanup all timers
       cleanupTimers.current.forEach((t) => clearTimeout(t));
@@ -122,6 +127,13 @@ export const DownloadProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const head = files[0];
     const slash = head.lastIndexOf('/');
     const primary = slash === -1 ? head : head.slice(slash + 1);
+    // A prior completed/cancelled download of the same basename may still have
+    // a pending 5s cleanup timer; cancel it so it can't delete this fresh entry.
+    const pendingCleanup = cleanupTimers.current.get(primary);
+    if (pendingCleanup) {
+      clearTimeout(pendingCleanup);
+      cleanupTimers.current.delete(primary);
+    }
     // Immediately show downloading state
     setDownloads((prev) => {
       const next = new Map(prev);

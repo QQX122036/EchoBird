@@ -199,8 +199,16 @@ async function fetchOneFeed(lang: 'zh' | 'en'): Promise<RawFeed> {
   let lastErr: any = null;
   for (let i = 0; i < order.length; i++) {
     const mirror = order[i];
+    // Bound each mirror: a throttled (stalled, not refused) connection would
+    // otherwise leave this fetch pending forever and hang the whole fallback
+    // chain. Abort after 10s so we advance to the next mirror.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
     try {
-      const res = await fetch(`${mirror.base}/${file}`, { cache: 'no-cache' });
+      const res = await fetch(`${mirror.base}/${file}`, {
+        cache: 'no-cache',
+        signal: controller.signal,
+      });
       if (!res.ok) {
         lastErr = new Error(`${mirror.name} ${res.status}`);
         continue;
@@ -220,6 +228,8 @@ async function fetchOneFeed(lang: 'zh' | 'en'): Promise<RawFeed> {
       }
     } catch (e) {
       lastErr = e;
+    } finally {
+      clearTimeout(timer);
     }
   }
   throw lastErr || new Error('all mirrors failed');

@@ -64,7 +64,6 @@ export function MotherAgentMain() {
     return () => window.removeEventListener('clear-chat', handler);
   }, [clearChat]);
 
-  const [_publicIP, setPublicIP] = useState('...');
   const [_serverModel, setServerModel] = useState<string | null>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null!);
   const _fileInputRef = useRef<HTMLInputElement>(null!);
@@ -116,13 +115,6 @@ export function MotherAgentMain() {
     });
     e.target.value = '';
   };
-
-  useEffect(() => {
-    fetch('https://api.ipify.org?format=text')
-      .then((r) => r.text())
-      .then((ip) => setPublicIP(ip))
-      .catch(() => setPublicIP('offline'));
-  }, []);
 
   // Poll Local Server status
   useEffect(() => {

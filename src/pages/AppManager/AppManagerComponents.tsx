@@ -194,7 +194,7 @@ export const ModelListSection: React.FC<ModelListSectionProps> = ({
     let currentProtocol = 'openai';
     if (toolSupportsBoth) {
       currentProtocol =
-        modelProtocolSelection[model.modelId || ''] ||
+        modelProtocolSelection[model.internalId] ||
         (toolProtocols[0] === 'anthropic' ? 'anthropic' : 'openai');
     } else {
       currentProtocol = toolProtocols[0];
@@ -269,7 +269,7 @@ export const ModelListSection: React.FC<ModelListSectionProps> = ({
                   const newProtocol = currentProtocol === 'openai' ? 'anthropic' : 'openai';
                   setModelProtocolSelection((prev) => ({
                     ...prev,
-                    [model.modelId || '']: newProtocol,
+                    [model.internalId]: newProtocol,
                   }));
                 }}
               >
