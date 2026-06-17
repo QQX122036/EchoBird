@@ -168,13 +168,18 @@ export const LocalServerMain: React.FC = () => {
   // Runtime options: vLLM / SGLang only on Linux
   const isLinux = systemInfo ? systemInfo.os === 'linux' : navigator.platform.startsWith('Linux');
   const isWindows = systemInfo?.os === 'windows';
-  // Only NVIDIA GPUs can use GPU-Full mode (app downloads CUDA build for NVIDIA, AVX2 CPU build for others)
+  // GPU-Full = full layer offload. NVIDIA → CUDA build; macOS llama.cpp is
+  // Metal-enabled; other no-GPU hosts → AVX2 CPU build.
   const hasNvidiaGpu = systemInfo ? systemInfo.hasNvidiaGpu : false;
 
   // Hand off to Mother Agent ("安装与修复" page) with a pre-filled trigger phrase.
   // Used by the CUDA detect/install helper pills below.
   const goToMother = useNavigationStore((s) => s.goToMother);
   const hasAmdGpu = systemInfo ? ((systemInfo as any).hasAmdGpu ?? false) : false;
+  // Apple Silicon has no separate VRAM number (unified memory) so it isn't
+  // flagged nvidia/amd — but macOS llama.cpp uses Metal, so it IS GPU-capable.
+  // Treat macOS as a usable GPU so we don't snap to -ngl 0 (CPU-only) on Metal.
+  const hasMetalGpu = systemInfo?.os === 'macos';
   const runtimeOptions = [
     // Linux + GPU: vLLM / SGLang first (recommended for Linux). llama.cpp last.
     ...(isLinux && (hasNvidiaGpu || hasAmdGpu)
@@ -201,10 +206,16 @@ export const LocalServerMain: React.FC = () => {
   // passed to startLlmServer in sync with what the user sees.
   useEffect(() => {
     if (!systemInfo) return;
-    if (runtime === 'llama-server' && !hasNvidiaGpu && !hasAmdGpu && gpuLayers === -1) {
+    if (
+      runtime === 'llama-server' &&
+      !hasNvidiaGpu &&
+      !hasAmdGpu &&
+      !hasMetalGpu &&
+      gpuLayers === -1
+    ) {
       setGpuLayers(0);
     }
-  }, [systemInfo, hasNvidiaGpu, hasAmdGpu, runtime, gpuLayers]);
+  }, [systemInfo, hasNvidiaGpu, hasAmdGpu, hasMetalGpu, runtime, gpuLayers]);
 
   // Server state
   const [logs, setLogs] = useState<string[]>([]);
@@ -827,11 +838,11 @@ export const LocalServerMain: React.FC = () => {
               disabled
               options={[
                 // GPU-Full always first; shown when any GPU present or non-llama runtime
-                ...(runtime !== 'llama-server' || hasNvidiaGpu || hasAmdGpu
+                ...(runtime !== 'llama-server' || hasNvidiaGpu || hasAmdGpu || hasMetalGpu
                   ? [{ id: '-1', label: t('server.gpuFull') }]
                   : []),
                 // CPU-only only shown when no GPU detected and using llama-server
-                ...(!hasNvidiaGpu && !hasAmdGpu && runtime === 'llama-server'
+                ...(!hasNvidiaGpu && !hasAmdGpu && !hasMetalGpu && runtime === 'llama-server'
                   ? [{ id: '0', label: t('server.cpuOnly') }]
                   : []),
               ]}
