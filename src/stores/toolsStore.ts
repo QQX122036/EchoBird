@@ -39,8 +39,18 @@ export const useToolsStore = create<ToolsState>((set, _get) => ({
     try {
       const tools = await api.scanTools();
       set({ detectedTools: tools });
-    } catch {
-      /* ignore */
+    } catch (e) {
+      // Don't swallow scan errors silently — the previous behavior
+      // (`catch { /* ignore */ }`) made a JSON deserialization
+      // regression in the Rust backend invisible: every install
+      // entry failed to parse, `scan_tools` returned Err, and the
+      // user stared at an empty App Manager with no log. Surface
+      // the error to the dev console so the next regression of
+      // this shape is at least diagnosable in dev mode. We still
+      // leave `detectedTools` untouched on failure (a stale list
+      // is more useful than a flash of empty), matching the
+      // original "keep what we had" semantics.
+      console.error('[toolsStore] scan_tools IPC failed:', e);
     }
     set({ isScanning: false });
   },

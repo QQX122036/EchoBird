@@ -19,6 +19,8 @@
     "core:window:allow-set-focus",
     "core:window:allow-show",
     "core:window:allow-start-dragging",
+    "core:window:allow-set-size",
+    "core:window:allow-center",
     "shell:allow-open",
     "dialog:allow-open",
     "clipboard-manager:allow-read-text"

@@ -94,7 +94,17 @@ export function buildGrid(buckets: DayBuckets): DayCell[][] {
 
 // Compact number formatting for the stat cards:
 //   271 → "271", 123635 → "123.6K", 951000000 → "951M".
+//
+// NaN/Infinity guard: an earlier bug (`ai_career_token_bytes` returned
+// `{"bytes": 0}` — an object — so the frontend multiplied object * 12 = NaN,
+// and `formatCompact(NaN)` rendered as the user-visible "NaNB" because the
+// `else` branch ran `(NaN / 1_000_000_000).toFixed(1) = "NaN"` + "B"). We
+// now collapse any non-finite input to "0" at the boundary — the shape
+// fix on the Rust side is the real repair, but a defense in depth here
+// means a future IPC shape mismatch can no longer render garbage on the
+// stat card.
 export function formatCompact(n: number): string {
+  if (!Number.isFinite(n)) return '0';
   if (n < 1000) return n.toLocaleString();
   if (n < 1_000_000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}K`;
   if (n < 1_000_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;

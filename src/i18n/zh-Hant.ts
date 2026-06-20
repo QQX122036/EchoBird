@@ -302,6 +302,8 @@ const zhHant: Partial<Translations> = {
     'Windows 部署 SSH 較為複雜。建議在伺服器端下載安裝 EchoBird，然後透過「安裝與修復」部署本機 SSH。',
   'status.running': '執行中',
   'status.offline': '離線',
+  'status.complete': '完成',
+  'status.failed': '失敗',
   'status.notInstalled': '未安裝',
 };
 export default zhHant;

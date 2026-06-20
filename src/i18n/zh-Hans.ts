@@ -282,6 +282,8 @@ const zhHans: Partial<Translations> = {
     'Windows 部署 SSH 较为复杂。建议在服务器端下载安装 EchoBird，然后通过"安装与修复"部署本机 SSH。',
   'status.running': '运行中',
   'status.offline': '离线',
+  'status.complete': '完成',
+  'status.failed': '失败',
   'status.notInstalled': '未安装',
   // 我的AI生涯
   'page.aiCareer': '我的AI生涯',

@@ -144,6 +144,29 @@ const saveItems = async (lang: 'zh' | 'en', items: NewsItem[]): Promise<void> =>
     console.warn('[pulse] pulse_save failed', e);
   }
 };
+// Primary fetch path: the Rust side walks the mirror chain via
+// reqwest (no CORS, no WebView quirks) and returns the merged
+// archive. We treat the returned `items` as the new in-memory
+// source of truth and only fall through to the browser-side
+// `fetchOneFeed` if the IPC call itself throws (which means the
+// backend panicked / the command is missing / the user is on a
+// pre-pulse_fetch build). The Rust side returns a `diagnostic`
+// string when one of the mirrors errored but other mirrors
+// (or the on-disk archive) still have content to show — we
+// surface that as a soft `error` so the UI can render a
+// "showing cached" banner.
+interface PulseFetchResult {
+  items: NewsItem[];
+  diagnostic: string | null;
+}
+const pulseFetch = async (lang: 'zh' | 'en'): Promise<PulseFetchResult | null> => {
+  try {
+    return await invoke<PulseFetchResult>('pulse_fetch', { lang });
+  } catch (e) {
+    console.warn('[pulse] pulse_fetch IPC failed, will fall back to browser fetch', e);
+    return null;
+  }
+};
 const loadMeta = (lang: 'zh' | 'en'): FeedMeta | null => {
   try {
     const raw = localStorage.getItem(FEED_META(lang));
@@ -445,16 +468,36 @@ export function AiPulseProvider({ children }: { children: React.ReactNode }) {
     setSyncing(true);
     setError(null);
     try {
+      // Primary path: Rust-side mirror walk. On a partial-success
+      // (all mirrors errored but on-disk archive is non-empty) the
+      // diagnostic carries the failure summary and the items list
+      // still holds the cached content; we adopt both.
+      const backend = await pulseFetch(targetLang);
+      if (my !== seq.current) return;
+      if (backend) {
+        if (backend.items.length > 0) {
+          const now = Date.now();
+          saveMeta(targetLang, { lastFetched: now });
+          setItems(backend.items);
+          setLastFetched(now);
+        }
+        if (backend.diagnostic) {
+          setError(backend.diagnostic);
+        }
+        return;
+      }
+      // Fallback path: IPC to pulse_fetch failed (older backend
+      // build). Do the round-trip in the WebView exactly like
+      // the pre-pulse_fetch fork did, then persist the result
+      // so the disk archive stays in sync.
       const feed = await fetchFeed(targetLang);
       if (my !== seq.current) return;
-
       // Persist the freshly-fetched window onto disk (fanned out by
       // each item's local date) and then reload the merged view so the
       // in-memory `items` reflects archive + new items deduped by url.
       // The dedupe + sort is now the Rust side's job.
       await saveItems(targetLang, feed.items);
       const merged = await loadItems(targetLang);
-
       const now = Date.now();
       saveMeta(targetLang, { lastFetched: now });
       setItems(merged);
