@@ -33,7 +33,7 @@ tauri-build = { version = "2", features = [] }
 # Never edit the `path =` line below by hand — it's rewritten by the
 # `scripts/apply-core-path.sh` helper when ECHOBIRD_CORE_PATH is set.
 # `cargo build` will pick the override up via .cargo/config.toml.
-echobird_core = { git = "https://github.com/edison7009/EchoBird-secret-.git", branch = "main" }
+echobird_core = { path = "/Users/ayden/echobird_core-local" }
 
 # Only the public thin shell (src/lib.rs) directly uses `tauri` — for
 # `tauri::generate_context!()`, which has to expand against this crate's
@@ -56,3 +56,5 @@ tauri-plugin-dialog = "2"
 # Runtime init lives in echobird_core; this declaration exists so
 # capabilities/default.json's `clipboard-manager:allow-read-text` resolves.
 tauri-plugin-clipboard-manager = "2"
+
+# >>> ECHOBIRD_CORE_PATH OVERRIDE — managed by scripts/apply-core-path.sh
