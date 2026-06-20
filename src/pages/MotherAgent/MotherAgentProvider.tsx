@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useI18n } from '../../hooks/useI18n';
 import * as api from '../../api/tauri';
-import type { ModelConfig, AgentEvent, ParasiteEvent } from '../../api/types';
+import type {
+  AgentEvent,
+  AgentHistoryMessage,
+  ModelConfig,
+  ParasiteEvent,
+} from '../../api/types';
 import { useChatPersistence } from '../../hooks/useChatPersistence';
 import type { DiskMsg } from '../../hooks/useChatPersistence';
 import { errorToKey } from '../../utils/normalizeError';
@@ -517,6 +522,25 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
         // to a non-existent "/anthropic/v1/messages" endpoint and fails hard
         // with "Not Found" instead of just using the OpenAI path that works.
         const anthropicUrl = modelData.anthropicUrl || undefined;
+        // Build the conversation history from the current chat.
+        // The backend trims oldest non-system messages to fit
+        // `max_input_tokens`, so we just hand it the full list
+        // and trust the cap. We only forward user/assistant
+        // bubbles (tool_call / error / cancelled are local UI
+        // state and would be misleading as upstream context).
+        // We read the *closure-captured* `chatOutput` here —
+        // the user bubble was appended above via setChatOutput
+        // and will not appear in the rendered list until the
+        // next render, so `chatOutput` already holds the
+        // conversation up to (but not including) this turn.
+        // The backend will append the current message itself,
+        // so we don't need to push it here.
+        const history: AgentHistoryMessage[] = chatOutput
+          .filter(
+            (m): m is { type: 'user' | 'assistant'; text: string } =>
+              m.type === 'user' || m.type === 'assistant',
+          )
+          .map((m) => ({ role: m.type, content: m.text }));
         await api.sendAgentMessage({
           message: message.trim(),
           model_id: modelData.internalId,
@@ -528,6 +552,7 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
           server_ids: selectedServerId === 'local' ? [] : [selectedServerId],
           skills: [],
           locale: locale || undefined,
+          history,
         });
       } catch (e) {
         const key = errorToKey(String(e));
@@ -541,7 +566,7 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
         setIsProcessing(false);
       }
     },
-    [agentModel, models, isProcessing, selectedServerId, locale, parasiteAgent]
+    [agentModel, models, isProcessing, selectedServerId, locale, parasiteAgent, chatOutput]
   );
 
   // Chat send (from input)

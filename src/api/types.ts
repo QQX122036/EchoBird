@@ -246,6 +246,11 @@ export interface StoreModel {
 
 // ─── Agent Types ───
 
+export interface AgentHistoryMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
 export interface AgentRequest {
   message: string;
   model_id: string;
@@ -260,6 +265,12 @@ export interface AgentRequest {
   skills: string[];
   /** UI locale code (e.g. "zh-Hans", "en"). Hints the agent's response language. */
   locale?: string;
+  /** Optional conversation history. When present, the backend trims
+   *  older non-system messages to fit `max_input_tokens` before
+   *  sending. Frontends that don't track history can omit this
+   *  field — the backend will treat the request as a single-turn
+   *  message (no trim applied, no system-prompt recovery). */
+  history?: AgentHistoryMessage[];
 }
 
 export type AgentEvent =
