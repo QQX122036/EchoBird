@@ -13,6 +13,84 @@ import { ModelNexusContext, useModelNexus } from './context';
 import type { NewModelForm } from './context';
 import modelDirectory from '../../data/modelDirectory.json';
 
+// ===== Model metadata localStorage layer =====
+//
+// Context-window / max-input / max-output tokens are model *metadata*,
+// not configuration the EchoBird backend needs to make API calls — so
+// we keep them in the browser-side `localStorage` keyed by
+// `internalId`. This sidesteps the Rust backend (private
+// `echobird_core` crate) silently dropping unknown JSON fields via
+// serde, and survives reload because Tauri reuses the same WebView
+// data directory across app launches.
+
+const META_STORAGE_PREFIX = 'echobird.model.meta.';
+
+interface ModelMeta {
+  maxContextTokens?: number;
+  maxInputTokens?: number;
+  maxOutputTokens?: number;
+}
+
+function readModelMeta(internalId: string): ModelMeta {
+  try {
+    const raw = window.localStorage.getItem(META_STORAGE_PREFIX + internalId);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    const out: ModelMeta = {};
+    if (typeof parsed.maxContextTokens === 'number') out.maxContextTokens = parsed.maxContextTokens;
+    if (typeof parsed.maxInputTokens === 'number') out.maxInputTokens = parsed.maxInputTokens;
+    if (typeof parsed.maxOutputTokens === 'number') out.maxOutputTokens = parsed.maxOutputTokens;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function writeModelMeta(internalId: string, meta: ModelMeta): void {
+  try {
+    const cleaned: ModelMeta = {};
+    if (typeof meta.maxContextTokens === 'number') cleaned.maxContextTokens = meta.maxContextTokens;
+    if (typeof meta.maxInputTokens === 'number') cleaned.maxInputTokens = meta.maxInputTokens;
+    if (typeof meta.maxOutputTokens === 'number') cleaned.maxOutputTokens = meta.maxOutputTokens;
+    if (Object.keys(cleaned).length === 0) {
+      window.localStorage.removeItem(META_STORAGE_PREFIX + internalId);
+    } else {
+      window.localStorage.setItem(META_STORAGE_PREFIX + internalId, JSON.stringify(cleaned));
+    }
+  } catch {
+    /* localStorage unavailable / quota — metadata is best-effort */
+  }
+}
+
+function clearModelMeta(internalId: string): void {
+  try {
+    window.localStorage.removeItem(META_STORAGE_PREFIX + internalId);
+  } catch {
+    /* no-op */
+  }
+}
+
+/** Merge `meta` fields from localStorage into a freshly-loaded `ModelConfig`.
+ *  Called once after `getModels()` resolves so the UI can show the
+ *  numbers on each ModelCard without having to plumb the storage layer
+ *  through every consumer. */
+function hydrateModelsWithMeta(models: ModelConfig[]): ModelConfig[] {
+  return models.map((m) => {
+    const meta = readModelMeta(m.internalId);
+    return { ...m, ...meta };
+  });
+}
+
+/** Parse a form-side string field into an optional positive integer.
+ *  Empty string / whitespace / NaN → undefined. */
+function parseOptionalTokenCount(raw: string): number | undefined {
+  const trimmed = (raw ?? '').trim();
+  if (!trimmed) return undefined;
+  const n = Number(trimmed);
+  if (!Number.isFinite(n) || n <= 0) return undefined;
+  return Math.floor(n);
+}
+
 // ===== Provider =====
 
 export function ModelNexusProvider({ children }: { children: React.ReactNode }) {
@@ -34,6 +112,9 @@ export function ModelNexusProvider({ children }: { children: React.ReactNode }) 
     anthropicUrl: '',
     apiKey: '',
     modelId: '',
+    maxContextTokens: '',
+    maxInputTokens: '',
+    maxOutputTokens: '',
   });
 
   const closeModelModal = useCallback(() => {
@@ -69,7 +150,7 @@ export function ModelNexusProvider({ children }: { children: React.ReactNode }) 
       if (api.getModels) {
         try {
           const models = await api.getModels();
-          setUserModels(models);
+          setUserModels(hydrateModelsWithMeta(models));
         } catch (error) {
           console.error('Load models failed:', error);
         }
@@ -380,12 +461,18 @@ export function ModelNexusMain() {
       } else {
         setKeyDestroyed(false);
       }
+      // Re-read metadata from localStorage to pick up any external edits.
+      const meta = readModelMeta(freshModel.internalId);
       setNewModelForm({
         name: freshModel.name,
         baseUrl: freshModel.baseUrl,
         anthropicUrl: freshModel.anthropicUrl || '',
         apiKey: freshModel.apiKey,
         modelId: freshModel.modelId || '',
+        maxContextTokens:
+          meta.maxContextTokens != null ? String(meta.maxContextTokens) : '',
+        maxInputTokens: meta.maxInputTokens != null ? String(meta.maxInputTokens) : '',
+        maxOutputTokens: meta.maxOutputTokens != null ? String(meta.maxOutputTokens) : '',
       });
       setShowAddModelModal(true);
     },
@@ -395,6 +482,7 @@ export function ModelNexusMain() {
   const handleCardDelete = useCallback(
     async (modelId: string) => {
       await api.deleteModel(modelId);
+      clearModelMeta(modelId);
       setUserModels((prev) => prev.filter((m) => m.internalId !== modelId));
     },
     [setUserModels]
@@ -453,6 +541,9 @@ export function ModelNexusMain() {
                   anthropicUrl: '',
                   apiKey: '',
                   modelId: '',
+                  maxContextTokens: '',
+                  maxInputTokens: '',
+                  maxOutputTokens: '',
                 });
                 setEditingModelId(null);
                 setShowAddModelModal(true);
@@ -490,6 +581,12 @@ type DirectoryEntry = {
   anthropicUrl: string;
   modelId: string;
   region: 'cn' | 'global';
+  /** Optional default context-window / max-input / max-output tokens
+   *  prefilled into the Add-Model form when the user clicks the
+   *  provider in the right-panel list. */
+  maxContextTokens?: number;
+  maxInputTokens?: number;
+  maxOutputTokens?: number;
 };
 
 const BUNDLED_PROVIDERS: DirectoryEntry[] = modelDirectory.providers as DirectoryEntry[];
@@ -616,6 +713,10 @@ export function ModelNexusPanel() {
         anthropicUrl: entry.anthropicUrl,
         apiKey: '',
         modelId: entry.modelId,
+        maxContextTokens:
+          entry.maxContextTokens != null ? String(entry.maxContextTokens) : '',
+        maxInputTokens: entry.maxInputTokens != null ? String(entry.maxInputTokens) : '',
+        maxOutputTokens: entry.maxOutputTokens != null ? String(entry.maxOutputTokens) : '',
       });
       setEditingModelId(null);
       setShowAddModelModal(true);
@@ -773,6 +874,63 @@ export function AddModelModal() {
                 className="w-full bg-cyber-input border border-cyber-border px-2 py-1.5 text-xs text-cyber-text font-mono focus:border-cyber-border focus:outline-none rounded-button"
               />
             </div>
+
+            {/* Token limits — optional metadata stored client-side via
+                localStorage (keyed by `internalId`). The Rust backend
+                doesn't see these because the `echobird_core` struct
+                doesn't declare them; serde silently drops unknown
+                fields. Leave blank to inherit whatever the running
+                Agent figures out at call time. */}
+            <div>
+              <label className="block text-xs text-cyber-text-secondary mb-1">
+                上下文长度 (tokens)
+              </label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                placeholder="e.g. 1000000"
+                value={newModelForm.maxContextTokens}
+                onChange={(e) =>
+                  setNewModelForm((prev) => ({ ...prev, maxContextTokens: e.target.value }))
+                }
+                className="w-full bg-cyber-input border border-cyber-border px-2 py-1.5 text-xs text-cyber-text font-mono focus:border-cyber-border focus:outline-none rounded-button"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-cyber-text-secondary mb-1">
+                  最大输入 (tokens)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="e.g. 900000"
+                  value={newModelForm.maxInputTokens}
+                  onChange={(e) =>
+                    setNewModelForm((prev) => ({ ...prev, maxInputTokens: e.target.value }))
+                  }
+                  className="w-full bg-cyber-input border border-cyber-border px-2 py-1.5 text-xs text-cyber-text font-mono focus:border-cyber-border focus:outline-none rounded-button"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-cyber-text-secondary mb-1">
+                  最大输出 (tokens)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="e.g. 16000"
+                  value={newModelForm.maxOutputTokens}
+                  onChange={(e) =>
+                    setNewModelForm((prev) => ({ ...prev, maxOutputTokens: e.target.value }))
+                  }
+                  className="w-full bg-cyber-input border border-cyber-border px-2 py-1.5 text-xs text-cyber-text font-mono focus:border-cyber-border focus:outline-none rounded-button"
+                />
+              </div>
+            </div>
             <div>
               <label className="block text-xs text-cyber-text-secondary mb-1">
                 {t('model.apiKey')}
@@ -884,6 +1042,15 @@ export function AddModelModal() {
           <button
             onClick={async () => {
               if (api.addModel) {
+                // Parse the three optional token-count fields. Empty /
+                // non-numeric inputs resolve to `undefined` so we don't
+                // round-trip garbage into localStorage.
+                const meta: ModelMeta = {
+                  maxContextTokens: parseOptionalTokenCount(newModelForm.maxContextTokens),
+                  maxInputTokens: parseOptionalTokenCount(newModelForm.maxInputTokens),
+                  maxOutputTokens: parseOptionalTokenCount(newModelForm.maxOutputTokens),
+                };
+
                 if (editingModelId && api.updateModel) {
                   const updatedModel = await api.updateModel(editingModelId, {
                     name: newModelForm.name,
@@ -891,10 +1058,25 @@ export function AddModelModal() {
                     anthropicUrl: newModelForm.anthropicUrl,
                     apiKey: newModelForm.apiKey,
                     modelId: newModelForm.modelId,
+                    ...meta,
                   });
+                  writeModelMeta(editingModelId, meta);
                   if (updatedModel) {
                     setUserModels((prev) =>
-                      prev.map((m) => (m.internalId === editingModelId ? updatedModel : m))
+                      prev.map((m) =>
+                        m.internalId === editingModelId
+                          ? { ...updatedModel, ...meta }
+                          : m
+                      )
+                    );
+                  } else {
+                    // Backend returned null (e.g. row vanished). Still
+                    // surface the metadata in local list so the user
+                    // doesn't lose what they typed.
+                    setUserModels((prev) =>
+                      prev.map((m) =>
+                        m.internalId === editingModelId ? { ...m, ...meta } : m
+                      )
                     );
                   }
                 } else {
@@ -904,8 +1086,10 @@ export function AddModelModal() {
                     anthropicUrl: newModelForm.anthropicUrl || undefined,
                     apiKey: newModelForm.apiKey,
                     modelId: newModelForm.modelId,
+                    ...meta,
                   });
-                  setUserModels((prev) => [...prev, newModel]);
+                  writeModelMeta(newModel.internalId, meta);
+                  setUserModels((prev) => [...prev, { ...newModel, ...meta }]);
                 }
 
                 setEditingModelId(null);
@@ -915,6 +1099,9 @@ export function AddModelModal() {
                   anthropicUrl: '',
                   apiKey: '',
                   modelId: '',
+                  maxContextTokens: '',
+                  maxInputTokens: '',
+                  maxOutputTokens: '',
                 });
                 setShowAddModelModal(false);
               }

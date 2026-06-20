@@ -1,5 +1,5 @@
 {
-  "$schema-comment": "Right-panel model directory. Each entry: name (display + matched against getModelIcon), url (website opened by ↗), baseUrl (OpenAI-protocol API base, prefilled into Add-Model when + is clicked), anthropicUrl (Anthropic-protocol API base — only filled if vendor natively serves /v1/messages, not via gateway adaptation), modelId (default model id; empty = leave blank in form), region ('cn' | 'global', controls locale-aware sort: zh locales surface 'cn' first, others surface 'global' first). URLs sourced from songquanpeng/one-api channeltype/url.go (2026-05) and vendor docs; some legacy URLs in one-api have been replaced with the current OpenAI-compatible v2 endpoint. Edit this file to fill in URLs / model IDs for each vendor.",
+  "$schema-comment": "Right-panel model directory. Each entry: name (display + matched against getModelIcon), url (website opened by ↗), baseUrl (OpenAI-protocol API base, prefilled into Add-Model when + is clicked), anthropicUrl (Anthropic-protocol API base — only filled if vendor natively serves /v1/messages, not via gateway adaptation), modelId (default model id; empty = leave blank in form), region ('cn' | 'global', controls locale-aware sort: zh locales surface 'cn' first, others surface 'global' first). Optional maxContextTokens / maxInputTokens / maxOutputTokens (all in tokens) are prefilled into the Add-Model form as best-known defaults and persisted to localStorage on save. URLs sourced from songquanpeng/one-api channeltype/url.go (2026-05) and vendor docs; some legacy URLs in one-api have been replaced with the current OpenAI-compatible v2 endpoint. Edit this file to fill in URLs / model IDs for each vendor.",
   "providers": [
     {
       "name": "Xiaomi 小米",
@@ -15,7 +15,9 @@
       "baseUrl": "https://api.deepseek.com",
       "anthropicUrl": "https://api.deepseek.com/anthropic",
       "modelId": "deepseek-v4-pro",
-      "region": "cn"
+      "region": "cn",
+      "maxContextTokens": 128000,
+      "maxOutputTokens": 8192
     },
     {
       "name": "MiniMax EN",
@@ -23,7 +25,9 @@
       "baseUrl": "https://api.minimax.io/v1",
       "anthropicUrl": "https://api.minimax.io/anthropic",
       "modelId": "MiniMax-M3",
-      "region": "global"
+      "region": "global",
+      "maxContextTokens": 1000000,
+      "maxOutputTokens": 32000
     },
     {
       "name": "MiniMax CN",
@@ -31,7 +35,9 @@
       "baseUrl": "https://api.minimaxi.com/v1",
       "anthropicUrl": "https://api.minimaxi.com/anthropic",
       "modelId": "MiniMax-M3",
-      "region": "cn"
+      "region": "cn",
+      "maxContextTokens": 1000000,
+      "maxOutputTokens": 32000
     },
     {
       "name": "GLM 智谱",
@@ -39,7 +45,9 @@
       "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4",
       "anthropicUrl": "https://open.bigmodel.cn/api/anthropic",
       "modelId": "glm-5.1",
-      "region": "cn"
+      "region": "cn",
+      "maxContextTokens": 200000,
+      "maxOutputTokens": 16000
     },
     {
       "name": "Kimi 月之暗面",
@@ -47,7 +55,9 @@
       "baseUrl": "https://api.moonshot.cn/v1",
       "anthropicUrl": "https://api.moonshot.ai/anthropic",
       "modelId": "kimi-k2.6",
-      "region": "cn"
+      "region": "cn",
+      "maxContextTokens": 262144,
+      "maxOutputTokens": 32000
     },
     {
       "name": "OpenAI",

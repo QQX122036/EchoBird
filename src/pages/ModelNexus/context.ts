@@ -10,6 +10,12 @@ export interface NewModelForm {
   anthropicUrl: string;
   apiKey: string;
   modelId: string;
+  /** Context window in tokens (input + output). Optional. */
+  maxContextTokens: string;
+  /** Maximum input tokens per request. Optional. */
+  maxInputTokens: string;
+  /** Maximum output tokens per response. Optional. */
+  maxOutputTokens: string;
 }
 
 export interface ModelNexusCtx {

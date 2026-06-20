@@ -12,6 +12,9 @@ export async function addModel(input: {
   apiKey: string;
   anthropicUrl?: string;
   modelId?: string;
+  maxContextTokens?: number;
+  maxInputTokens?: number;
+  maxOutputTokens?: number;
 }): Promise<ModelConfig> {
   const result = await invoke<ModelConfig>('add_model', { input });
   window.dispatchEvent(new Event('models-changed'));
@@ -32,6 +35,9 @@ export async function updateModel(
     apiKey?: string;
     anthropicUrl?: string;
     modelId?: string;
+    maxContextTokens?: number;
+    maxInputTokens?: number;
+    maxOutputTokens?: number;
   }
 ): Promise<ModelConfig | null> {
   const result = await invoke<ModelConfig | null>('update_model', { internalId, updates });

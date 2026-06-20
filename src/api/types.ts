@@ -44,6 +44,18 @@ export interface ModelConfig {
   anthropicTested?: boolean;
   openaiLatency?: number;
   anthropicLatency?: number;
+  /**
+   * Total context window (input + output) in tokens.
+   * Stored client-side in localStorage (key: `echobird.model.meta.<internalId>`);
+   * the EchoBird Rust backend ignores unknown fields, so we keep this
+   * metadata in the frontend rather than round-tripping it through the
+   * private `echobird_core` crate.
+   */
+  maxContextTokens?: number;
+  /** Maximum input tokens per request. */
+  maxInputTokens?: number;
+  /** Maximum output tokens per response. */
+  maxOutputTokens?: number;
 }
 
 export interface ModelTestResult {
