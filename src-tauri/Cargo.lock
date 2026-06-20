@@ -1499,7 +1499,7 @@ dependencies = [
 
 [[package]]
 name = "echobird"
-version = "5.3.3"
+version = "5.3.4"
 dependencies = [
  "echobird_core",
  "tauri",
