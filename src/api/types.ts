@@ -149,6 +149,19 @@ export interface ApplyModelInput {
    * window. Other tools ignore this field.
    */
   oneMContext?: boolean;
+  /**
+   * Total context window in tokens (input + output). Forwarded to the
+   * backend so apply_model_to_tool can pre-bake the value into the
+   * tool-specific config file (~/.claude/settings.json, ~/.codex/config.toml,
+   * etc.) when the tool natively understands the limit. The agent_loop
+   * also reads it to size its conversation budget. Optional — older
+   * tool adapters ignore the field.
+   */
+  maxContextTokens?: number;
+  /** Maximum input tokens per request. */
+  maxInputTokens?: number;
+  /** Maximum output tokens per response. */
+  maxOutputTokens?: number;
 }
 
 // ─── App Settings Types ───

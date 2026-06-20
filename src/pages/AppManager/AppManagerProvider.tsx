@@ -240,6 +240,14 @@ export const AppManagerProvider: React.FC<AppManagerProviderProps> = ({ children
         ...(isRelayCapableApp ? { relayMode: effectiveRelay } : {}),
         ...(isCodexApp ? { responsesPassthrough: effectivePassthrough } : {}),
         ...(isClaudeApp ? { oneMContext: effective1m } : {}),
+        // Forward the user-configured context window to the tool
+        // adapter. Optional — adapters that haven't been updated to
+        // honor these fields just drop them on the floor (serde-style
+        // permissive deserialization). Mirrors the design we already
+        // use for `add_model` / `update_model`.
+        maxContextTokens: model.maxContextTokens,
+        maxInputTokens: model.maxInputTokens,
+        maxOutputTokens: model.maxOutputTokens,
       });
 
       if (result?.success) {

@@ -9,6 +9,8 @@
     "tools:sync": "robocopy tools D:\\build-output\\debug\\_up_\\tools /E /XO /NFL /NDL || exit 0",
     "dev": "npm run tools:sync && cargo tauri dev",
     "build": "cargo tauri build",
+    "apply-core-path": "bash scripts/apply-core-path.sh",
+    "apply-core-path:unset": "bash scripts/apply-core-path.sh unset",
     "preview": "vite preview",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",

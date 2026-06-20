@@ -72,6 +72,7 @@ scripts/*
 !scripts/merge_aihot.py
 !scripts/inject_pinned.py
 !scripts/pulse_pinned.json
+!scripts/apply-core-path.sh
 
 # llama-server binaries (downloaded during CI build)
 electron/tools/llama-server/bin/

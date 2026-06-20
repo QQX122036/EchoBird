@@ -16,11 +16,23 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-# Closed-source core (private repository, fetched by Cargo at build time).
-# Requires read access to github.com/edison7009/EchoBird-secret-.
-# On Windows, set CARGO_NET_GIT_FETCH_WITH_CLI=true so Cargo uses git's
-# credential helper (gh auth login provides the token); CI uses the
-# ECHOBIRD_SECRET_DEPLOY_KEY Actions secret via webfactory/ssh-agent.
+# Closed-source core. Two supported source layouts:
+#
+# 1. Default: the upstream private repo
+#    `https://github.com/edison7009/EchoBird-secret-.git` (read-only,
+#    requires the ECHOBIRD_SECRET_DEPLOY_KEY CI secret on Windows).
+#    This is what CI / release builds use.
+#
+# 2. Local path override, used when developing on the public repo
+#    without access to the upstream private repo (this fork's typical
+#    workflow). Set `ECHOBIRD_CORE_PATH=/abs/path/to/echobird_core-local`
+#    in your environment and the `.cargo/config.toml` under
+#    `src-tauri/` will rewrite the dependency to `path = "..."`
+#    via a [source] + [patch] section.
+#
+# Never edit the `path =` line below by hand — it's rewritten by the
+# `scripts/apply-core-path.sh` helper when ECHOBIRD_CORE_PATH is set.
+# `cargo build` will pick the override up via .cargo/config.toml.
 echobird_core = { git = "https://github.com/edison7009/EchoBird-secret-.git", branch = "main" }
 
 # Only the public thin shell (src/lib.rs) directly uses `tauri` — for
