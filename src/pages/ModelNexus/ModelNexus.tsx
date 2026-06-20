@@ -73,11 +73,29 @@ function clearModelMeta(internalId: string): void {
 /** Merge `meta` fields from localStorage into a freshly-loaded `ModelConfig`.
  *  Called once after `getModels()` resolves so the UI can show the
  *  numbers on each ModelCard without having to plumb the storage layer
- *  through every consumer. */
+ *  through every consumer.
+ *
+ *  Backwards-compat: the public `echobird_core` crate lives in a private
+ *  repo and (for v5.3.3 and earlier) silently drops unknown JSON fields
+ *  via serde, so `getModels()` returns rows that don't carry
+ *  `maxContextTokens` / `maxInputTokens` / `maxOutputTokens`. We
+ *  keep mirroring whatever the user typed into localStorage so old
+ *  installs keep working. Once the backend actually surfaces the
+ *  fields (e.g. a fork that adds them to the `add_model` /
+ *  `update_model` struct), the localStorage entry becomes redundant
+ *  and is ignored on read — the backend value wins. The
+ *  `localStorage` layer stays as a *forward-migration* source of
+ *  truth for any pre-fork rows that the backend never learned
+ *  about. */
 function hydrateModelsWithMeta(models: ModelConfig[]): ModelConfig[] {
   return models.map((m) => {
     const meta = readModelMeta(m.internalId);
-    return { ...m, ...meta };
+    return {
+      ...m,
+      maxContextTokens: m.maxContextTokens ?? meta.maxContextTokens,
+      maxInputTokens: m.maxInputTokens ?? meta.maxInputTokens,
+      maxOutputTokens: m.maxOutputTokens ?? meta.maxOutputTokens,
+    };
   });
 }
 
@@ -523,6 +541,9 @@ export function ModelNexusMain() {
                   isPinging={pingingModelIds.has(model.internalId)}
                   selected={selectedModel === model.internalId}
                   isActive={selectedModel === model.internalId}
+                  maxContextTokens={model.maxContextTokens}
+                  maxInputTokens={model.maxInputTokens}
+                  maxOutputTokens={model.maxOutputTokens}
                   onClick={() => handleCardClick(model)}
                   onProtocolClick={(protocol) => handleCardProtocolClick(model, protocol)}
                   onEdit={isDemo ? undefined : () => handleCardEdit(model)}
@@ -883,7 +904,7 @@ export function AddModelModal() {
                 Agent figures out at call time. */}
             <div>
               <label className="block text-xs text-cyber-text-secondary mb-1">
-                上下文长度 (tokens)
+                {t('model.contextWindow')}
               </label>
               <input
                 type="number"
@@ -900,7 +921,7 @@ export function AddModelModal() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs text-cyber-text-secondary mb-1">
-                  最大输入 (tokens)
+                  {t('model.maxInput')}
                 </label>
                 <input
                   type="number"
@@ -916,7 +937,7 @@ export function AddModelModal() {
               </div>
               <div>
                 <label className="block text-xs text-cyber-text-secondary mb-1">
-                  最大输出 (tokens)
+                  {t('model.maxOutput')}
                 </label>
                 <input
                   type="number"

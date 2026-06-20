@@ -50,6 +50,21 @@ export const getModelIcon = (name: string, modelId?: string): string | null => {
   return null;
 };
 
+/** Format a token count for compact display on the ModelCard.
+ *  - < 1_000   → "999"
+ *  - < 1_000_000  → "9.9k" / "999k"
+ *  - >= 1_000_000 → "1m" / "1.2m"
+ *  Rounded to one decimal under 10k so 1.0M doesn't print as "1000k". */
+function formatTokenCount(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 1_000_000) {
+    const k = n / 1000;
+    return k < 10 ? k.toFixed(1).replace(/\.0$/, '') + 'k' : Math.round(k) + 'k';
+  }
+  const m = n / 1_000_000;
+  return m < 10 ? m.toFixed(1).replace(/\.0$/, '') + 'm' : Math.round(m) + 'm';
+}
+
 // Card skeleton (loading state)
 export const ModelCardSkeleton = () => (
   <div className="h-48 p-4 bg-cyber-surface rounded-card animate-pulse">
@@ -85,6 +100,13 @@ export interface ModelCardProps {
   onEdit?: () => void; // edit callback
   onDelete?: () => void; // delete callback
   onProtocolClick?: (protocol: 'openai' | 'anthropic') => void; // protocol tag click
+  /** Total context window in tokens (input + output). Optional — when
+   *  undefined, the card skips the tokens row entirely. */
+  maxContextTokens?: number;
+  /** Maximum input tokens per request. */
+  maxInputTokens?: number;
+  /** Maximum output tokens per response. */
+  maxOutputTokens?: number;
 }
 
 // Matrix decode animation — characters scramble then lock in sequence
@@ -179,6 +201,9 @@ export const ModelCard = React.memo(
     isPinging = false,
     selected = false,
     isActive = false,
+    maxContextTokens,
+    maxInputTokens,
+    maxOutputTokens,
     onClick,
     onEdit,
     onDelete,
@@ -282,9 +307,45 @@ export const ModelCard = React.memo(
                 {latency}ms
               </span>
             ) : (
-              <span className="text-cyber-text-muted/70 text-xs">{t('model.notTested')}</span>
-            )}
+            <span className="text-cyber-text-muted/70 text-xs">{t('model.notTested')}</span>
+          )}
+        </div>
+
+        {/* Token limits — surfaces the per-model ceiling set in the
+            Add/Edit dialog. The whole row is hidden unless at least
+            one of the three numbers is set, so cards without
+            metadata keep the original 3-row layout. Values are
+            formatted with k/m suffix when >= 1k to keep the row
+            from breaking the card's fixed h-48 height on phones
+            and narrow sidebars. */}
+        {(maxContextTokens || maxInputTokens || maxOutputTokens) && (
+          <div className="flex items-center gap-1 truncate">
+            <span className="text-cyber-text/60">{t('model.tokens')}:</span>
+            <span className="truncate text-cyber-text/60">
+              {maxContextTokens != null && (
+                <span title={t('model.maxContextTokensFull')}>
+                  {formatTokenCount(maxContextTokens)}
+                </span>
+              )}
+              {maxInputTokens != null && (
+                <>
+                  {maxContextTokens != null && ' / '}
+                  <span title={t('model.maxInputTokensFull')}>
+                    in {formatTokenCount(maxInputTokens)}
+                  </span>
+                </>
+              )}
+              {maxOutputTokens != null && (
+                <>
+                  {(maxContextTokens != null || maxInputTokens != null) && ' / '}
+                  <span title={t('model.maxOutputTokensFull')}>
+                    out {formatTokenCount(maxOutputTokens)}
+                  </span>
+                </>
+              )}
+            </span>
           </div>
+        )}
 
           {/* Protocol row — no label (OpenAI / Anthropic are universally
               recognized names, so a "Protocol:" prefix would be redundant
@@ -338,10 +399,13 @@ export const ModelCard = React.memo(
       'modelId',
       'latency',
       'openaiTested',
-      'anthropicTested',
-      'isPinging',
-      'selected',
-    ];
+    'anthropicTested',
+    'isPinging',
+    'selected',
+    'maxContextTokens',
+    'maxInputTokens',
+    'maxOutputTokens',
+  ];
     for (const k of keys) {
       if ((prev as any)[k] !== (next as any)[k]) return false;
     }

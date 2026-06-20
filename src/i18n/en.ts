@@ -117,6 +117,13 @@ const en: Translations = {
   'model.relays': 'Model Relays',
   'model.escCancel': 'CANCEL',
   'model.enterSave': 'SAVE',
+  'model.contextWindow': 'Context Window (tokens)',
+  'model.maxInput': 'Max Input (tokens)',
+  'model.maxOutput': 'Max Output (tokens)',
+  'model.maxContextTokensFull': 'Total context window (input + output) in tokens',
+  'model.maxInputTokensFull': 'Maximum input tokens per request',
+  'model.maxOutputTokensFull': 'Maximum output tokens per response',
+  'model.tokens': 'TOKENS',
   // App Manager
   'agent.myLocalModel': 'My Local Model',
   'agent.selectTool': 'Select a tool to configure',

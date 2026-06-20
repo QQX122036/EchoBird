@@ -119,6 +119,12 @@ export type TKey =
   | 'model.deleteConfirm'
   | 'model.escCancel'
   | 'model.enterSave'
+  | 'model.contextWindow'
+  | 'model.maxInput'
+  | 'model.maxOutput'
+  | 'model.maxContextTokensFull'
+  | 'model.maxInputTokensFull'
+  | 'model.maxOutputTokensFull'
   // ModelCard labels
   | 'model.label'
   | 'model.source'
@@ -128,6 +134,7 @@ export type TKey =
   | 'model.relays'
   | 'model.cloud'
   | 'model.local'
+  | 'model.tokens'
 
   // App Manager
   | 'agent.myLocalModel'
