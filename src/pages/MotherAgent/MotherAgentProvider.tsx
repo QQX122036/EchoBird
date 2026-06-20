@@ -103,7 +103,7 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
           }))
         );
       })
-      .catch(() => {});
+      .catch((e) => console.error('[MotherAgent] loadSSHServers failed', e));
   }, []);
 
   const addSSHServer = useCallback(
@@ -143,7 +143,7 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
     setSSHServers((prev) => prev.filter((s) => s.id !== id));
     setSelectedServerId((prev) => (prev === id ? 'local' : prev));
     // Remove from backend
-    await api.removeSSHServerFromDisk(id).catch(() => {});
+    await api.removeSSHServerFromDisk(id).catch((e) => console.error('[MotherAgent] removeSSHServerFromDisk failed', e));
     useNavigationStore.getState().bumpSshServersVersion();
   }, []);
 
@@ -609,8 +609,8 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
         clearChat: () => {
           setChatOutput([]);
           persistence.clearHistory();
-          api.resetAgent(selectedServerId).catch(() => {});
-          if (parasiteAgent) api.parasiteReset(parasiteAgent).catch(() => {});
+          api.resetAgent(selectedServerId).catch((e) => console.error('[MotherAgent] resetAgent failed', e));
+          if (parasiteAgent) api.parasiteReset(parasiteAgent).catch((e) => console.error('[MotherAgent] parasiteReset failed', e));
         },
         abortAgent: () => {
           // Idempotent on rapid multi-clicks: backend `agent_abort` is
@@ -628,9 +628,9 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
             return;
           }
           if (parasiteAgent) {
-            api.parasiteAbort(parasiteAgent).catch(() => {});
+            api.parasiteAbort(parasiteAgent).catch((e) => console.error('[MotherAgent] parasiteAbort failed', e));
           } else {
-            api.abortAgent(selectedServerId).catch(() => {});
+            api.abortAgent(selectedServerId).catch((e) => console.error('[MotherAgent] abortAgent failed', e));
           }
           setChatOutput((o) => {
             const last = o[o.length - 1];
