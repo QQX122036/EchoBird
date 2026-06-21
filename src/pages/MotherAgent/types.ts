@@ -37,6 +37,12 @@ export interface MotherAgentCtx {
   setChatInput: (v: string) => void;
   chatOutput: ChatMessage[];
   agentState: string;
+  // Latest `contextUsage` payload reported by the backend for the
+  // current turn (or null if no turn has run yet). Sourced from the
+  // `agent_event` `state` channel; see MotherAgentProvider for the
+  // parser. The UI uses it to override its local byte/tokens
+  // estimate with the backend's authoritative post-trim counts.
+  contextUsage: { usedTokens: number; totalTokens: number } | null;
   isProcessing: boolean;
   agentModelData: ModelConfig | undefined;
   chatInputFocused: boolean;

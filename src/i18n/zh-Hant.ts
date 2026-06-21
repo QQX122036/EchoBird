@@ -297,6 +297,7 @@ const zhHant: Partial<Translations> = {
   'mother.switchEngineHint': '切換後建議清理對話記錄',
   'mother.switchEngineHintReason': '避免上下文不相容導致報錯',
   'mother.contextUsage': '上下文用量 {used}KB / {total}KB（{pct}%）',
+  'mother.contextUsageTokens': '上下文用量 {used} / {total} tokens（{pct}%）',
   'terminal.thinking': '思考中',
   'ssh.winNote':
     'Windows 部署 SSH 較為複雜。建議在伺服器端下載安裝 EchoBird，然後透過「安裝與修復」部署本機 SSH。',

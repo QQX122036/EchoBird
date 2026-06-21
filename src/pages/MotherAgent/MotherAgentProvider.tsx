@@ -25,6 +25,29 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
   const { motherPrefill: initialMessage } = useNavigationStore();
   const onAgentRunningChange = useNavigationStore((s) => s.setAgentRunning);
   const { t: _t, locale } = useI18n(); // locale for agent hint; t for error messages
+  // Diagnostic: append a timestamped line to localStorage. Helps debug
+  // "stuck at thinking" cases by reading `localStorage.getItem('echobird_debug_log')`
+  // from a WebView inspector or pasting into DevTools console.
+  // Disabled in production builds by the `__DEV__` flag if set.
+  const _debugLog = (msg: string) => {
+    try {
+      const key = 'echobird_debug_log';
+      const prev = localStorage.getItem(key) || '';
+      const ts = new Date().toISOString();
+      const line = `[${ts}] ${msg}\n`;
+      const next = (prev + line).slice(-2000); // keep last 2KB
+      localStorage.setItem(key, next);
+      // eslint-disable-next-line no-console
+      console.log(`[MotherAgent]`, msg);
+    } catch { /* ignore */ }
+  };
+  // Expose the log reader on window for easy console inspection:
+  //   `window.__echobirdDebugLog()` returns the log string.
+  if (typeof window !== 'undefined') {
+    (window as unknown as { __echobirdDebugLog?: () => string }).__echobirdDebugLog = () => {
+      try { return localStorage.getItem('echobird_debug_log') || ''; } catch { return ''; }
+    };
+  }
   const [models, setModels] = useState<ModelConfig[]>([]);
   const [agentModel, setAgentModelRaw] = useState<string | null>(() =>
     localStorage.getItem('echobird_agent_model')
@@ -67,6 +90,15 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [agentState, setAgentState] = useState('idle');
+  // Backend (echobird_core services/agent.rs) emits a `state` event with
+  // payload `{"kind":"contextUsage","usedTokens":N,"totalTokens":M}`
+  // once per turn, reflecting the post-trim context footprint vs. the
+  // saved model's `maxContextTokens`. We parse it lazily so the UI ring
+  // shows the *real* token counts (not the hardcoded ~300KB byte cap)
+  // whenever the backend talks to us. Undefined until the first event.
+  const [contextUsage, setContextUsage] = useState<
+    { usedTokens: number; totalTokens: number } | null
+  >(null);
   const [chatInputFocused, setChatInputFocused] = useState(false);
   const [chatCursorPos, setChatCursorPos] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null!);
@@ -351,9 +383,13 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
             setAgentState('idle');
             break;
           }
-          case 'state':
+          case 'state': {
+            // The parasite (Claude Code CLI) emits plain status
+            // strings, not the JSON-wrapped contextUsage the agent
+            // emits. Just store the status in agentState for the UI.
             setAgentState(event.state);
             break;
+          }
         }
       })
       .then((fn) => {
@@ -445,9 +481,33 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
             setAgentState('idle');
             break;
           }
-          case 'state':
+          case 'state': {
+            // The local echobird_core emits contextUsage as a JSON
+            // string in `state`. Mirror the parasite handler: parse
+            // it, populate the ring, and only set the raw agentState
+            // when it's a plain status string (so the bubble doesn't
+            // show a JSON blob).
+            try {
+              const payload = JSON.parse(event.state);
+              if (
+                payload &&
+                payload.kind === 'contextUsage' &&
+                typeof payload.usedTokens === 'number' &&
+                typeof payload.totalTokens === 'number'
+              ) {
+                setContextUsage({
+                  usedTokens: payload.usedTokens,
+                  totalTokens: payload.totalTokens,
+                });
+                // Don't pollute the state field with the JSON.
+                break;
+              }
+            } catch {
+              /* not a contextUsage payload; fall through */
+            }
             setAgentState(event.state);
             break;
+          }
         }
       })
       .then((fn) => {
@@ -468,7 +528,44 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
   const handleChatSendInternal = useCallback(
     async (message: string, displayText?: string, chips?: BubbleChip[]) => {
       if (isProcessing || !message.trim()) return;
+      _debugLog(`send start: msg="${message.slice(0, 40)}" modelId=${agentModel}`);
       setIsProcessing(true);
+      // Drop the previous turn's contextUsage so the ring resets until the
+      // backend reports the new one (see contextUsage state doc above).
+      setContextUsage(null);
+      // Defensive safety net: if the IPC or streaming hangs and neither
+      // the listener's `done` event nor an `error` event arrives within
+      // 90s, force-clear the spinner so the user is never stuck on
+      // "思考中…" forever. The 3s abort-timeout (in abortAgent) only
+      // fires when the user clicks the stop button; this one runs
+      // unconditionally on every send.
+      if (abortTimeoutRef.current) {
+        clearTimeout(abortTimeoutRef.current);
+        abortTimeoutRef.current = null;
+      }
+      const sendStartedAt = Date.now();
+      abortTimeoutRef.current = setTimeout(() => {
+        if (abortTimeoutRef.current) {
+          abortTimeoutRef.current = null;
+        }
+        setIsProcessing((prev) => {
+          if (prev) {
+            const elapsed = Math.round((Date.now() - sendStartedAt) / 1000);
+            console.warn(
+              `[MotherAgent] send stuck for ${elapsed}s — safety net force-clearing spinner.`
+            );
+            setChatOutput((prevOutput) => [
+              ...prevOutput,
+              {
+                type: 'error',
+                text: `请求超时（${elapsed}s 未收到响应）。请检查网络或后端日志。`,
+              },
+            ]);
+            setAgentState('idle');
+          }
+          return false;
+        });
+      }, 90000);
       // Use display text + chips if provided (chip-send path), else full message text
       setChatOutput((prev) => [
         ...prev,
@@ -541,19 +638,26 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
               m.type === 'user' || m.type === 'assistant',
           )
           .map((m) => ({ role: m.type, content: m.text }));
-        await api.sendAgentMessage({
-          message: message.trim(),
-          model_id: modelData.internalId,
-          base_url: modelData.baseUrl || '',
-          api_key: modelData.apiKey,
-          model_name: modelData.modelId || modelData.name,
-          provider: anthropicUrl ? 'anthropic' : 'openai',
-          anthropic_url: anthropicUrl,
-          server_ids: selectedServerId === 'local' ? [] : [selectedServerId],
-          skills: [],
-          locale: locale || undefined,
-          history,
-        });
+        _debugLog(`invoke agent_send_message start — modelId=${modelData.internalId} useAnthropic=${!!anthropicUrl}`);
+        try {
+          await api.sendAgentMessage({
+            message: message.trim(),
+            model_id: modelData.internalId,
+            base_url: modelData.baseUrl || '',
+            api_key: modelData.apiKey,
+            model_name: modelData.modelId || modelData.name,
+            provider: anthropicUrl ? 'anthropic' : 'openai',
+            anthropic_url: anthropicUrl,
+            server_ids: selectedServerId === 'local' ? [] : [selectedServerId],
+            skills: [],
+            locale: locale || undefined,
+            history,
+          });
+          _debugLog('invoke agent_send_message resolved (stream done)');
+        } catch (invokeErr) {
+          _debugLog(`invoke agent_send_message REJECTED: ${String(invokeErr).slice(0, 200)}`);
+          throw invokeErr;
+        }
       } catch (e) {
         const key = errorToKey(String(e));
         const type: 'cancelled' | 'error' = key === 'error.userCancelled' ? 'cancelled' : 'error';
@@ -589,6 +693,7 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
         isProcessing,
         agentModelData,
         agentState,
+        contextUsage,
         chatInputFocused,
         setChatInputFocused,
         chatCursorPos,
@@ -609,7 +714,7 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
         clearChat: () => {
           setChatOutput([]);
           persistence.clearHistory();
-          api.resetAgent(selectedServerId).catch((e) => console.error('[MotherAgent] resetAgent failed', e));
+          api.resetAgent().catch((e) => console.error('[MotherAgent] resetAgent failed', e));
           if (parasiteAgent) api.parasiteReset(parasiteAgent).catch((e) => console.error('[MotherAgent] parasiteReset failed', e));
         },
         abortAgent: () => {
@@ -630,7 +735,7 @@ export function MotherAgentProvider({ children }: { children: React.ReactNode })
           if (parasiteAgent) {
             api.parasiteAbort(parasiteAgent).catch((e) => console.error('[MotherAgent] parasiteAbort failed', e));
           } else {
-            api.abortAgent(selectedServerId).catch((e) => console.error('[MotherAgent] abortAgent failed', e));
+            api.abortAgent().catch((e) => console.error('[MotherAgent] abortAgent failed', e));
           }
           setChatOutput((o) => {
             const last = o[o.length - 1];

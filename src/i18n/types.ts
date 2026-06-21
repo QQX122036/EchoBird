@@ -269,6 +269,8 @@ export type TKey =
   | 'mother.switchEngineHintReason'
   // Context-usage line in the "?" tooltip — {used}/{total}/{pct} placeholders
   | 'mother.contextUsage'
+  // Token-aware variant — {used} and {total} are pre-formatted strings.
+  | 'mother.contextUsageTokens'
   // Terminal status bar
   | 'terminal.thinking'
   // SSH Guide

@@ -51,8 +51,12 @@ export async function aiCareerTokenBytes(): Promise<number> {
 
 /// Set the profile avatar from a user-picked image file (re-encoded to a
 /// 256px PNG on the Rust side).
+// Local `echobird_core` declares `set_avatar(src_path: String)`. Rename
+// the JS key from `sourcePath` to `srcPath` so the Tauri command
+// macro can find the matching snake_case parameter at runtime
+// (otherwise it errors with `missing required key src_path`).
 export async function setAvatar(sourcePath: string): Promise<void> {
-  return invoke('set_avatar', { sourcePath });
+  return invoke('set_avatar', { srcPath: sourcePath });
 }
 
 /// Read the stored avatar as a base64 PNG data URI, or `null` if unset.

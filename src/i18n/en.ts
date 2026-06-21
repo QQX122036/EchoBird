@@ -334,6 +334,8 @@ const en: Translations = {
   'mother.switchEngineHint': 'Clear chat history after switching',
   'mother.switchEngineHintReason': 'Avoids context-mismatch errors',
   'mother.contextUsage': 'Context usage {used}KB / {total}KB ({pct}%)',
+  // {used} / {total} are pre-formatted token counts (e.g. "123K", "1.2M").
+  'mother.contextUsageTokens': 'Context usage {used} / {total} tokens ({pct}%)',
   'terminal.thinking': 'thinking',
   'ssh.winNote':
     'Windows SSH deployment is more complex than Linux/macOS. Recommended: install EchoBird on the Windows machine first, then use Install & Repair to set up local SSH access for you.',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { ArrowUp, ChevronDown, Square } from 'lucide-react';
 import { RemoteModelSelector, type ModelOption } from '../../components/RemoteModelSelector';
 import { getModelIcon } from '../../components/cards/ModelCard';
@@ -24,8 +24,9 @@ export function MotherAgentMain() {
     setChatInput,
     chatOutput,
     isProcessing,
-    agentModelData: _agentModelData,
+    agentModelData,
     agentState: _agentState,
+    contextUsage,
     chatEndRef,
     handleChatSend,
     sendMessage,
@@ -52,17 +53,40 @@ export function MotherAgentMain() {
     [models]
   );
 
-  // Estimated UTF-8 byte footprint of the current chat — drives the ring
-  // around the "?" hint so users can see how close they are to the
-  // agent_loop trim threshold (MAX_CONTEXT_BYTES in echobird_core).
-  // estimateContextBytes re-encodes the whole transcript; recomputing it on
-  // every streamed token is O(n^2) and only drives a coarse visual ring, so
-  // debounce it (recompute ~300ms after updates settle) instead of per-token.
-  const [contextBytes, setContextBytes] = useState(0);
+  // Token-based context-usage ring. `contextUsage` is the backend's
+  // authoritative post-trim count from the `state.contextUsage` agent
+  // event; while it's null we fall back to a debounced local estimate
+  // of the chat transcript (so the ring still ticks during streaming).
+  // The local estimate is debounced ~300ms because
+  // estimateContextTokens re-encodes the whole transcript and we don't
+  // need per-token granularity for a coarse visual ring.
+  const [localEstimatedTokens, setLocalEstimatedTokens] = useState(0);
   useEffect(() => {
-    const id = setTimeout(() => setContextBytes(estimateContextBytes(chatOutput)), 300);
+    const id = setTimeout(
+      () => setLocalEstimatedTokens(estimateContextTokens(chatOutput)),
+      300
+    );
     return () => clearTimeout(id);
   }, [chatOutput]);
+
+  // The numerator: prefer the backend's `usedTokens` when present, else
+  // fall back to the local estimate. The denominator prefers the saved
+  // model's `maxContextTokens` (matches the form field the user
+  // configured), then the backend-reported total, then a hardcoded
+  // fallback. So a model with `maxContextTokens: 1_000_000` shows
+  // "0 / 1.0M" on a fresh chat and "234K / 1.0M" mid-stream.
+  const { contextUsedTokens, contextMaxTokens } = useMemo(() => {
+    const used =
+      contextUsage?.usedTokens !== undefined
+        ? contextUsage.usedTokens
+        : localEstimatedTokens;
+    const modelCap = agentModelData?.maxContextTokens;
+    const total =
+      modelCap && modelCap > 0
+        ? modelCap
+        : contextUsage?.totalTokens || MA_DEFAULT_CONTEXT_TOKENS;
+    return { contextUsedTokens: used, contextMaxTokens: total };
+  }, [contextUsage, localEstimatedTokens, agentModelData]);
 
   // Listen for clear-chat event from title bar
   useEffect(() => {
@@ -377,8 +401,8 @@ export function MotherAgentMain() {
             {parasiteAgent !== PARASITE_CLAUDE_ID && (
               <ParasiteHint
                 ccInstalled={parasiteAvailable.includes(PARASITE_CLAUDE_ID)}
-                contextBytes={contextBytes}
-                contextMaxBytes={MA_CONTEXT_MAX_BYTES}
+                contextUsedTokens={contextUsedTokens}
+                contextMaxTokens={contextMaxTokens}
               />
             )}
             <RemoteModelSelector
@@ -448,17 +472,29 @@ export function MotherAgentMain() {
 // Claude Code CLI instead of EchoBird's own agent_loop.
 const PARASITE_CLAUDE_ID = 'claudecode';
 
-// Mirrors `MAX_CONTEXT_BYTES` in echobird_core (services/agent_loop.rs).
-// Used only for visualization — the actual trim happens server-side. Keep
-// this value in sync with the Rust constant whenever it changes.
-const MA_CONTEXT_MAX_BYTES = 300_000;
+// Fallback context cap (in TOKENS, not bytes) when the selected model
+// has no `maxContextTokens` configured yet. ~200K matches the EchoBird
+// short-memory agent's historical ceiling; the actual trim happens
+// server-side based on the resolved model's `max_input_tokens`, so
+// this is purely for the visualization ring. Once the user fills in
+// `maxContextTokens` in the model form (or the backend reports the
+// real number via the `contextUsage` state event), this constant is
+// bypassed.
+const MA_DEFAULT_CONTEXT_TOKENS = 200_000;
 
-// Rough UTF-8 byte estimate of what gets serialized into the LLM payload.
-// Doesn't have to match Rust's tally exactly — it just needs to grow at the
-// right rate so the ring is a useful "how full am I" indicator. Per message
-// we add a constant envelope (~50–130 bytes) to cover role/content wrapper
-// + tool_use_id/name overhead on the Rust side.
-function estimateContextBytes(messages: readonly ChatMessage[]): number {
+// Rough token estimate of what gets serialized into the LLM payload.
+// We don't have a JS tokenizer in the renderer, so we approximate:
+// UTF-8 bytes / BYTES_PER_TOKEN, plus a per-message envelope for the
+// role/content wrapper + tool_use_id/name overhead on the Rust side.
+// Doesn't have to match Rust's tally exactly — it just needs to grow
+// at the right rate so the ring is a useful "how full am I" indicator
+// until the backend reports the authoritative `usedTokens` via the
+// `contextUsage` state event. 3.5 bytes/token is the OpenAI rule of
+// thumb for English-leaning mixed CJK content; close enough for a
+// coarse ring, and the backend's number takes over the moment it
+// arrives.
+const BYTES_PER_TOKEN = 3.5;
+function estimateContextTokens(messages: readonly ChatMessage[]): number {
   const encoder = new TextEncoder();
   let total = 0;
   for (const m of messages) {
@@ -474,13 +510,24 @@ function estimateContextBytes(messages: readonly ChatMessage[]): number {
       // 'error' and 'cancelled' are frontend-only — never sent to the LLM
     }
   }
-  return total;
+  return Math.round(total / BYTES_PER_TOKEN);
+}
+
+// Pretty-print a token count: 1_234_567 → "1.2M", 234_567 → "235K",
+// 999 → "999". Keeps the ring's tooltip copy short and matches the
+// scale the user sees in the model form's `maxContextTokens` field.
+function formatTokenCount(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return '0';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`;
+  if (n >= 1_000) return `${Math.round(n / 1_000)}K`;
+  return Math.round(n).toString();
 }
 
 // ===== Context Usage Ring =====
-// Concentric SVG ring rendered around the "?" glyph. Fills as the estimated
-// payload approaches MA_CONTEXT_MAX_BYTES; transitions to amber then red to
-// telegraph "older messages will start dropping soon".
+// Concentric SVG ring rendered around the "?" glyph. Fills as the
+// post-trim context usage approaches the model's `maxContextTokens`
+// (or the backend-reported `totalTokens`); transitions to amber then
+// red to telegraph "older messages will start dropping soon".
 
 interface ContextRingProps {
   ratio: number;
@@ -541,20 +588,30 @@ function ContextRing({ ratio, children }: ContextRingProps) {
 
 interface ParasiteHintProps {
   ccInstalled: boolean;
-  contextBytes: number;
-  contextMaxBytes: number;
+  contextUsedTokens: number;
+  contextMaxTokens: number;
 }
 
-function ParasiteHint({ ccInstalled, contextBytes, contextMaxBytes }: ParasiteHintProps) {
+function ParasiteHint({
+  ccInstalled,
+  contextUsedTokens,
+  contextMaxTokens,
+}: ParasiteHintProps) {
   const { t } = useI18n();
   const baseTip = ccInstalled
     ? t('mother.parasiteTipInstalled')
     : t('mother.parasiteTipNotInstalled');
-  const ratio = contextBytes / contextMaxBytes;
+  // Clamp the ratio to [0, 1] for the ring fill — a 1.1M-token session
+  // on a 1M-cap model would otherwise wrap the ring past full.
+  const ratio = contextMaxTokens > 0 ? contextUsedTokens / contextMaxTokens : 0;
   const pct = Math.min(100, Math.round(ratio * 100));
-  const usageLine = t('mother.contextUsage')
-    .replace('{used}', Math.round(contextBytes / 1024).toString())
-    .replace('{total}', Math.round(contextMaxBytes / 1024).toString())
+  // Use the token-friendly i18n label now that the denominator is the
+  // model's actual `maxContextTokens` (1M, 200K, …) rather than the
+  // backend's old ~300KB byte ceiling. Both numbers are pre-formatted
+  // via formatTokenCount so they read "1.0M / 1.0M" or "234K / 1.0M".
+  const usageLine = t('mother.contextUsageTokens')
+    .replace('{used}', formatTokenCount(contextUsedTokens))
+    .replace('{total}', formatTokenCount(contextMaxTokens))
     .replace('{pct}', pct.toString());
   const ariaLabel = `${baseTip} ${usageLine}`;
 

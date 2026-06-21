@@ -303,6 +303,7 @@ const ja: Partial<Translations> = {
   'mother.switchEngineHint': '切り替え後はチャット履歴のクリアを推奨します',
   'mother.switchEngineHintReason': '不整合によるエラーを回避できます',
   'mother.contextUsage': 'コンテキスト使用量 {used}KB / {total}KB（{pct}%）',
+  'mother.contextUsageTokens': 'コンテキスト使用量 {used} / {total} tokens（{pct}%）',
   'terminal.thinking': '思考中',
   'ssh.winNote':
     'Windows での SSH 展開は Linux / macOS より複雑です。サーバー側に EchoBird を先にインストールし、「インストール & 修復」から SSH を設定するのを推奨します。',

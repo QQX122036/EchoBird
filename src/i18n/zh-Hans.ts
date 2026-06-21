@@ -277,6 +277,9 @@ const zhHans: Partial<Translations> = {
   'mother.switchEngineHint': '切换后建议清理对话记录',
   'mother.switchEngineHintReason': '避免上下文不兼容导致报错',
   'mother.contextUsage': '上下文用量 {used}KB / {total}KB（{pct}%）',
+  // Token-friendly variant for models that ship a maxContextTokens (1M / 200K / etc.).
+  // {used} / {total} are pre-formatted strings (e.g. "123K", "1.2M").
+  'mother.contextUsageTokens': '上下文用量 {used} / {total} tokens（{pct}%）',
   'terminal.thinking': '思考中',
   'ssh.winNote':
     'Windows 部署 SSH 较为复杂。建议在服务器端下载安装 EchoBird，然后通过"安装与修复"部署本机 SSH。',

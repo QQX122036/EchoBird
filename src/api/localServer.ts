@@ -27,8 +27,13 @@ export async function getLlmServerInfo(): Promise<LocalServerInfo> {
   return invoke('get_llm_server_info');
 }
 
-export async function getLlmServerLogs(): Promise<string[]> {
-  return invoke('get_llm_server_logs');
+// Local `echobird_core` declares `get_llm_server_logs(lines: u32)`.
+// The local core currently returns an empty string regardless of
+// `lines`, but Tauri still requires the key to be present, so we
+// default to 200 lines (matches the historical upstream behavior).
+export async function getLlmServerLogs(lines = 200): Promise<string[]> {
+  const raw = await invoke<string>('get_llm_server_logs', { lines });
+  return raw ? raw.split('\n') : [];
 }
 
 // ─── Custom launch command (advanced / bring-your-own engine) ───
@@ -78,16 +83,23 @@ export async function scanGgufFiles(dir: string): Promise<GgufFile[]> {
   return invoke('scan_gguf_files', { dir });
 }
 
-export async function scanHfModels(dir: string): Promise<HfModelEntry[]> {
-  return invoke('scan_hf_models', { dir });
+// Local `echobird_core` declares `scan_hf_models(repo: String)`. Rename
+// the JS key from `dir` to `repo` so the IPC finds the matching
+// snake_case parameter (otherwise it errors with
+// `missing required key repo`).
+export async function scanHfModels(repo: string): Promise<HfModelEntry[]> {
+  return invoke('scan_hf_models', { repo });
 }
 
 export async function addModelsDir(): Promise<string[]> {
   return invoke('add_models_dir');
 }
 
-export async function removeModelsDir(dir: string): Promise<string[]> {
-  return invoke('remove_models_dir', { dir });
+// Local `echobird_core` declares `remove_models_dir(path: String)`.
+// Rename the JS key from `dir` to `path` so the IPC finds the
+// matching snake_case parameter.
+export async function removeModelsDir(path: string): Promise<string[]> {
+  return invoke('remove_models_dir', { path });
 }
 
 export async function detectGpu(): Promise<{ gpuName: string; gpuVramGb: number } | null> {
@@ -121,8 +133,16 @@ export async function getStoreModels(): Promise<StoreModel[]> {
 
 /** Trigger a GGUF model download. Pass a single-element array for single-file
  *  models, multiple elements (in shard order) for sharded multi-file GGUFs. */
+// Local `echobird_core` declares `download_model(url: String, dest: String)`
+// and currently returns `not_implemented`. The public repo's JS still
+// tracks the upstream's `(repo, files)` shape — translate the call into
+// the local core's `(url, dest)` signature so the IPC layer doesn't
+// reject it with `missing required key url/dest`. The function will
+// still reject with `not_implemented`; callers should fall back to the
+// browser-side fetch path the DownloadContext already uses for the
+// actual transfer.
 export async function downloadModel(repo: string, files: string[]): Promise<string> {
-  return invoke('download_model', { repo, files });
+  return invoke('download_model', { url: repo, dest: files.join(',') });
 }
 
 export interface LocalEngineEntry {
